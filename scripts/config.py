@@ -11,6 +11,8 @@ MODS_DIR = RESOURCES_DIR / "mods"
 REQUIRED_DIR = RESOURCES_DIR / "required"
 # 安装后的 SPT 子目录名
 TARGET_SUBDIR = "SPT"
+# 安装完成后放置的标记文件，用于判断已安装过
+MANIFEST_FILE = ".spt_installed.json"
 
 
 @dataclass(frozen=True)

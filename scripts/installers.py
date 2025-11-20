@@ -1,6 +1,8 @@
+import json
 import shutil
 import subprocess
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -29,6 +31,34 @@ def _confirm(message: str) -> bool:
     return reply == "y"
 
 
+def _manifest_path(target_root: Path) -> Path:
+    """返回标记文件路径。"""
+    return target_root / config.MANIFEST_FILE
+
+
+def _load_manifest(target_root: Path) -> Optional[dict]:
+    """读取标记文件，无法读取时返回 None。"""
+    path = _manifest_path(target_root)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _write_manifest(target_root: Path, version: GameVersion) -> None:
+    """写入标记文件，记录已安装的版本和时间。"""
+    path = _manifest_path(target_root)
+    payload = {
+        "version": version.label,
+        "server_zip": version.server_zip,
+        "client_zip": version.client_zip,
+        "installed_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def select_install_path(state: InstallerState) -> None:
     """选取安装目录并校验：必须为空且目录名不含中文。"""
     while True:
@@ -36,6 +66,20 @@ def select_install_path(state: InstallerState) -> None:
         if chosen is None:
             print("已取消选择。")
             return
+
+        # 中文名校验
+        if utils.contains_chinese_root(chosen):
+            print(f"文件夹名不能包含中文: {chosen.name}")
+            continue
+
+        manifest = _load_manifest(chosen)
+        if manifest:
+            # 已有安装标记，直接使用该路径
+            state.install_path = chosen
+            installed_ver = manifest.get("version", "未知版本")
+            print(f"检测到已安装版本: {installed_ver}，已选中目录: {chosen}")
+            return
+
         error = utils.ensure_empty_directory(chosen)
         if error:
             print(error)
@@ -50,7 +94,8 @@ def _require_install_path(state: InstallerState, enforce_empty: bool = False) ->
     if not state.install_path:
         print("请先通过选项 1 选择安装路径。")
         return None
-    if enforce_empty:
+    if enforce_empty and not _load_manifest(state.install_path):
+        # 只有在不存在标记文件时才要求空目录；有标记视为已安装目录。
         error = utils.ensure_empty_directory(state.install_path)
         if error:
             print(error)
@@ -94,6 +139,12 @@ def auto_install(state: InstallerState, versions: List[GameVersion]) -> None:
         return
     version = versions[selection - 1]
 
+    # 如果目录已有标记文件，则直接提示已安装并跳过重装
+    manifest = _load_manifest(install_path)
+    if manifest:
+        print(f"该目录已安装版本 {manifest.get('version', '未知')}，已跳过自动安装。")
+        return
+
     if not _confirm(f"确认开始安装版本 {version.label} 吗？"):
         print("已取消。")
         return
@@ -120,6 +171,12 @@ def auto_install(state: InstallerState, versions: List[GameVersion]) -> None:
     except Exception as exc:
         print(f"安装失败: {exc}")
         return
+
+    # 安装完成后写入标记
+    try:
+        _write_manifest(install_path, version)
+    except Exception as exc:  # 标记写入失败不影响安装结果
+        print(f"写入安装标记失败（可忽略）: {exc}")
 
     print("安装完成，已将文件解压到:", install_path)
     required_target = install_path / "required"
