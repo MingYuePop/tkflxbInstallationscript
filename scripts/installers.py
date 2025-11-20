@@ -64,7 +64,8 @@ def select_install_path(state: InstallerState) -> None:
     while True:
         chosen = utils.pick_directory_with_dialog(state.install_path)
         if chosen is None:
-            print("已取消选择。")
+            # 用户关闭对话框，则继续下一轮重新弹出
+            print("已取消选择，将重新打开目录选择。")
             return
 
         # 中文名校验
@@ -101,7 +102,7 @@ def _require_install_path(state: InstallerState, enforce_empty: bool = False) ->
             print(error)
             return None
     return state.install_path
-
+    
 
 def _copy_required(target_root: Path) -> None:
     """复制 required 安装必备组件到目标路径。"""

@@ -67,6 +67,8 @@ def pick_directory_with_dialog(initial: Optional[Path] = None) -> Optional[Path]
         return _manual_path_input()
 
     root = tk.Tk()
+    # 置顶避免对话框被挡在后面
+    root.attributes("-topmost", True)
     root.withdraw()
     if initial:
         root.directory = filedialog.askdirectory(initialdir=str(initial))
