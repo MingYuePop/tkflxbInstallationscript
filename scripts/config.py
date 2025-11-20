@@ -13,6 +13,8 @@ REQUIRED_DIR = RESOURCES_DIR / "required"
 TARGET_SUBDIR = "SPT"
 # 安装完成后放置的标记文件，用于判断已安装过
 MANIFEST_FILE = ".spt_installed.json"
+# 在线公告 URL
+ANNOUNCEMENT_URL = "https://raw.githubusercontent.com/MingYuePop/tkflxbInstallationscript/refs/heads/main/announcement.json"
 
 
 @dataclass(frozen=True)
