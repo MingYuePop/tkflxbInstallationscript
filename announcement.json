@@ -1,1 +1,8 @@
-123
+{
+  "latest_version": "1.0",
+  "update_time": "2025-11-20",
+  "title": "====== SPT 自动安装器 1.0 ======",
+  "content": "官方交流群：1067632016",
+  "force_update": false,
+  "download_url": "https://github.com/tkflxb/SPT-Install-Script/releases/latest"
+}
