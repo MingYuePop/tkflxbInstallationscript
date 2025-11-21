@@ -65,12 +65,14 @@ def select_install_path(state: InstallerState) -> None:
         chosen = utils.pick_directory_with_dialog(state.install_path)
         if chosen is None:
             # 用户关闭对话框，则继续下一轮重新弹出
-            print("已取消选择，将重新打开目录选择。")
+            print("已取消选择。")
             return
 
         # 中文名校验
         if utils.contains_chinese_root(chosen):
             print(f"文件夹名不能包含中文: {chosen.name}")
+            # 稍作等待，避免对话框关闭瞬间又弹出
+            time.sleep(2)
             continue
 
         manifest = _load_manifest(chosen)
@@ -84,8 +86,12 @@ def select_install_path(state: InstallerState) -> None:
         error = utils.ensure_empty_directory(chosen)
         if error:
             print(error)
+            # 稍作等待，避免对话框关闭瞬间又弹出
+            time.sleep(2)
             continue
+        # 成功则保存状态并返回
         state.install_path = chosen
+        
         print(f"安装路径已设置: {chosen}")
         return
 

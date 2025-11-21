@@ -3,3 +3,6 @@
 resources/client/Client.0.16.9.0.40087.zip
 resources/required/NDP472-DevPack-ENU.exe
 resources/server/SPT-4.0.6-40087-d13d2dd.zip
+build/
+dist/
+/scripts/__pycache__
