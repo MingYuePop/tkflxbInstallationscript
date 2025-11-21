@@ -267,8 +267,8 @@ def launch_game(state: InstallerState) -> None:
     creation_flags = subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, "CREATE_NEW_CONSOLE") else 0
     try:
         subprocess.Popen([str(server_exe)], cwd=spt_dir, creationflags=creation_flags)
-        print("已启动 SPT.Server.exe，等待 5 秒后启动客户端...")
-        time.sleep(5)
+        print("已启动 SPT.Server.exe，等待 6 秒后启动客户端...")
+        time.sleep(6)
         subprocess.Popen([str(launcher_exe)], cwd=spt_dir, creationflags=creation_flags)
     except Exception as exc:
         print(f"启动失败: {exc}")
