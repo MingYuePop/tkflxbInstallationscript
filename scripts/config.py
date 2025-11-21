@@ -1,9 +1,25 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
+import sys
 
 # 路径配置：以仓库根目录为基础，便于在任何位置运行。
-BASE_DIR = Path(__file__).resolve().parent.parent
+
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    # -----------------------------------------------------------------
+    # 程序被 PyInstaller 打包了 (运行 .exe)
+    # sys.executable 指向 .exe 文件本身
+    # 我们需要 .exe 文件所在的 *目录*
+    # -----------------------------------------------------------------
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    # -----------------------------------------------------------------
+    # 程序未被打包 (运行 .py)
+    # sys.executable 指向 Python 解释器
+    # 我们需要 .py 文件所在的 *目录*
+    # -----------------------------------------------------------------
+    BASE_DIR = Path(__file__).resolve().parent
+    
 RESOURCES_DIR = BASE_DIR / "resources"
 SERVER_DIR = RESOURCES_DIR / "server"
 CLIENT_DIR = RESOURCES_DIR / "client"

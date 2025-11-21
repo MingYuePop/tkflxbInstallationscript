@@ -1,0 +1,2 @@
+pyinstaller --onedir --console --name SPTInstaller --add-data "resources;." launcher.py
+pyinstaller --onefile --console --name SPTInstaller launcher.py

@@ -7,6 +7,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        time.sleep(2)
         print("\n软件退出中...")
         exit(0)
