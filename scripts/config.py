@@ -18,7 +18,7 @@ else:
     # sys.executable 指向 Python 解释器
     # 我们需要 .py 文件所在的 *目录*
     # -----------------------------------------------------------------
-    BASE_DIR = Path(__file__).resolve().parent
+    BASE_DIR = Path(__file__).resolve().parent.parent
     
 RESOURCES_DIR = BASE_DIR / "resources"
 SERVER_DIR = RESOURCES_DIR / "server"
