@@ -7,24 +7,22 @@ from .installers import InstallerState, auto_install, install_mod, install_dotne
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
 
+
 def print_menu(install_path: str | None) -> None:
     """打印主菜单，使用颜色高亮选项。"""
     # ============ 获取并格式化公告 ============
     ann = get_announcement()
-
-    if ann["success"]:
-        info = ann["data"]
-        content = info.get("content", "官方网站：tkf.pyden.dev").strip()
-        title = info.get("title", "====== SPT 自动安装器 ====== 1.0").strip()
-        # 把 \n 变成真正的换行，并加上颜色
-        print(color_text(content, Colors.YELLOW))
-    else:
+    info = ann["data"] if ann["success"] else {}
+    content = info.get("content","官方网站：tkf.pyden.dev").strip()
+    title = info.get("title","====== SPT 自动安装器 ====== 1.1").strip()
+    # 把 \n 变成真正的换行，并加上颜色
+    print(color_text(content, Colors.YELLOW))
+    print(color_text(title, Colors.CYAN))
+    if not ann["success"]:
         # 失败时也用黄色提示，不影响主流程
         print(color_text(f"公告：{ann['error']}", Colors.YELLOW))
-    
+
     # 打印标题
-    print(color_text(f"{title}", Colors.CYAN))
-    
     if install_path:
         print(color_text(f"当前安装路径: {install_path}", Colors.GREEN))
     else:
