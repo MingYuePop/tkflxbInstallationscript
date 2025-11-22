@@ -12,12 +12,51 @@ from . import checker
 from . import utils
 from .utils import Colors, color_text
 
+# 记住上一次有效的安装路径
+_PERSIST_FILE = config.RESOURCES_DIR / "config.json"
+_PERSIST_KEY = "last_install_path"
+
+
+def _load_saved_install_path() -> Optional[Path]:
+    """读取上次保存的安装路径；无效则返回 None。"""
+    if not _PERSIST_FILE.exists():
+        return None
+    try:
+        data = json.loads(_PERSIST_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    raw = data.get(_PERSIST_KEY)
+    if not raw:
+        return None
+    candidate = Path(raw)
+    if candidate.exists() and candidate.is_dir():
+        return candidate
+    return None
+
+
+def _save_install_path(path: Path) -> None:
+    """将有效的安装路径写入本地文件，便于下次启动直接复用。"""
+    try:
+        payload = {}
+        if _PERSIST_FILE.exists():
+            try:
+                payload = json.loads(_PERSIST_FILE.read_text(encoding="utf-8"))
+            except Exception:
+                payload = {}
+        payload[_PERSIST_KEY] = str(path)
+        _PERSIST_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _PERSIST_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        # 持久化失败不影响主流程
+        pass
+
 
 class InstallerState:
     """保存当前用户选择的安装路径，便于各功能共享。"""
 
     def __init__(self) -> None:
-        self.install_path: Optional[Path] = None
+        self.install_path: Optional[Path] = _load_saved_install_path()
+        self.loaded_from_cache: bool = self.install_path is not None
 
     def spt_dir(self) -> Optional[Path]:
         """返回安装路径下的 SPT 子目录。"""
@@ -80,6 +119,8 @@ def select_install_path(state: InstallerState) -> None:
         if manifest:
             # 已有安装标记，直接使用该路径
             state.install_path = chosen
+            state.loaded_from_cache = True
+            _save_install_path(state.install_path)
             installed_ver = manifest.get("version", "未知版本")
             print(f"检测到已安装版本: {installed_ver}，已选中目录: {chosen}")
             return
@@ -92,6 +133,8 @@ def select_install_path(state: InstallerState) -> None:
             continue
         # 成功则保存状态并返回
         state.install_path = chosen
+        state.loaded_from_cache = True
+        _save_install_path(state.install_path)
         
         print(f"安装路径已设置: {chosen}")
         return
