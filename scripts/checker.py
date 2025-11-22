@@ -4,6 +4,7 @@ import subprocess
 import re
 from typing import Dict, List, Tuple
 from pathlib import Path
+import wmi
 
 
 def check_dotnet_runtime(version: str) -> bool:
@@ -107,19 +108,11 @@ def check_ndp_framework(version: str = "4.7.2") -> bool:
         True 如果已安装，False 否则
     """
     try:
-        # 通过注册表检查 .NET Framework
-        result = subprocess.run(
-            [
-                "reg", "query",
-                r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full",
-                "/v", "Release"
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        return result.returncode == 0
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+        # 通过 WMI 检查 .NET Framework
+        c = wmi.WMI()
+        result = c.ExecQuery("SELECT * FROM Win32_Product WHERE Name LIKE '%.NET Framework%'")
+        return len(result) > 0
+    except Exception:
         return False
 
 
