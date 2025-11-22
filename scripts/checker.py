@@ -2,9 +2,13 @@
 
 import subprocess
 import re
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 from pathlib import Path
-import wmi
+
+try:
+    import wmi
+except ImportError:
+    wmi = None
 
 
 def check_dotnet_runtime(version: str) -> bool:
@@ -107,6 +111,8 @@ def check_ndp_framework(version: str = "4.7.2") -> bool:
     Returns:
         True 如果已安装，False 否则
     """
+    if wmi is None:
+        return False
     try:
         # 通过 WMI 检查 .NET Framework
         c = wmi.WMI()
@@ -116,6 +122,15 @@ def check_ndp_framework(version: str = "4.7.2") -> bool:
         return False
 
 
+REQUIRED_COMPONENTS: List[Tuple[str, Callable[[], bool]]] = [
+    (".NET Runtime 9.0.9", lambda: check_dotnet_runtime("9.0.9")),
+    (".NET Desktop Runtime 9.0.7", lambda: check_dotnet_desktop_runtime("9.0.7")),
+    (".NET Desktop Runtime 5.0.0", lambda: check_dotnet_desktop_runtime("5.0.0")),
+    ("ASP.NET Core Runtime 9.0.9", lambda: check_dotnet_aspcore_runtime("9.0.9")),
+    (".NET Framework 4.7.2", lambda: check_ndp_framework("4.7.2")),
+]
+
+
 def check_all_required() -> Dict[str, bool]:
     """
     检查所有必需的软件。
@@ -123,13 +138,19 @@ def check_all_required() -> Dict[str, bool]:
     Returns:
         字典，键为软件名称，值为是否已安装
     """
-    return {
-        ".NET Runtime 9.0.9": check_dotnet_runtime("9.0.9"),
-        ".NET Desktop Runtime 9.0.7": check_dotnet_desktop_runtime("9.0.7"),
-        ".NET Desktop Runtime 5.0.0": check_dotnet_desktop_runtime("5.0.0"),
-        "ASP.NET Core Runtime 9.0.9": check_dotnet_aspcore_runtime("9.0.9"),
-        ".NET Framework 4.7.2": check_ndp_framework("4.7.2"),
-    }
+    results: Dict[str, bool] = {}
+    for name, detector in REQUIRED_COMPONENTS:
+        try:
+            results[name] = detector()
+        except Exception:
+            results[name] = False
+    return results
+
+
+def missing_required_components() -> List[str]:
+    """返回尚未安装的组件名称列表"""
+    results = check_all_required()
+    return [name for name, installed in results.items() if not installed]
 
 
 def print_check_results() -> None:
