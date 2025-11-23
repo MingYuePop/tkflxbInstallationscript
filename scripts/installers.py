@@ -205,7 +205,13 @@ def _auto_install_dotnet(missing_override: Optional[List[str]] = None, require_c
             subprocess.run([str(installer_path), *args], check=True)
             print(f"{name} 安装命令已执行完成。")
         except subprocess.CalledProcessError as exc:
-            print(f"{name} 安装失败，退出码 {exc.returncode}。")
+            # 错误码 1638 表示已安装其他版本，无需重复安装
+            if exc.returncode == 1638:
+                print(f"{name} 安装失败（错误码 1638）")
+                print(f"您的电脑已安装了其他版本的 .NET，此版本无需安装。")
+                print(f"可以直接启动游戏，无需重复安装。")
+            else:
+                print(f"{name} 安装失败，退出码 {exc.returncode}。")
         except Exception as exc:
             print(f"安装 {name} 时出错：{exc}")
 

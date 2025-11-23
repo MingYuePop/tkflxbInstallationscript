@@ -36,13 +36,10 @@ def print_menu(install_path: str | None) -> None:
         print(color_text(f"当前安装路径: {install_path}", Colors.GREEN))
     else:
         print(color_text("当前安装路径: 未选择", Colors.YELLOW))
-    print(color_text("1) 选择安装路径（必须为空且目录名不含中文）", Colors.CYAN))
+    print(color_text("1) 选择游戏安装路径", Colors.CYAN))
     print(color_text("2) 开始自动安装", Colors.CYAN))
     print(color_text("3) 启动游戏", Colors.CYAN))
     print(color_text("4) 其他", Colors.CYAN))
-    print(color_text("   1) 安装 .NET 环境", Colors.CYAN))
-    print(color_text("   2) 检查并更新", Colors.CYAN))
-    print(color_text("   3) 安装内置 MOD", Colors.CYAN))
     print(color_text("0) 退出", Colors.RED))
 
 
@@ -58,6 +55,7 @@ def print_other_menu() -> None:
 def handle_other_menu(state: InstallerState) -> None:
     """处理"其他"子菜单的选择。"""
     while True:
+        clear_screen()
         print_other_menu()
         choice = input("请选择功能：").strip()
         if choice == "1":
