@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import zipfile
+import requests
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Optional
 
@@ -157,3 +158,45 @@ def open_in_explorer(path: Path) -> None:
         print(f"Explorer 打开跳过（非 Windows 环境）: {path}")
         return
     subprocess.Popen(["explorer", str(path)])
+
+
+def download_file(url: str, dest_path: Path, show_progress: bool = True) -> bool:
+    """
+    从 URL 下载文件到指定路径，支持显示进度条。
+    
+    Args:
+        url: 文件下载链接
+        dest_path: 目标文件路径
+        show_progress: 是否显示进度条
+    
+    Returns:
+        True 表示下载成功，False 表示失败
+    """
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded = 0
+        
+        # 确保目标目录存在
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(dest_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if show_progress and total_size > 0:
+                        _print_progress(downloaded, total_size)
+        
+        if show_progress and total_size > 0:
+            print()  # 换行
+        
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"下载失败: {e}")
+        return False
+    except Exception as e:
+        print(f"保存文件失败: {e}")
+        return False
