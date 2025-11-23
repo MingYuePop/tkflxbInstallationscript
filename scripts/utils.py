@@ -119,37 +119,45 @@ def _print_progress(current: int, total: int) -> None:
 
 def extract_zip(zip_path: Path, target_dir: Path, strip_common_root: bool = False, show_progress: bool = False) -> None:
     """解压 zip 到目标目录，可选去除统一顶层目录，并显示进度。"""
-    with zipfile.ZipFile(zip_path) as archive:
-        entries = archive.infolist()
-        root_to_strip = detect_common_root(archive.namelist()) if strip_common_root else None
-        total = len(entries)
-        for idx, info in enumerate(entries, start=1):
-            dest_parts = PurePosixPath(info.filename).parts
-            if not dest_parts:
+    try:
+        with zipfile.ZipFile(zip_path) as archive:
+            entries = archive.infolist()
+            root_to_strip = detect_common_root(archive.namelist()) if strip_common_root else None
+            total = len(entries)
+            for idx, info in enumerate(entries, start=1):
+                dest_parts = PurePosixPath(info.filename).parts
+                if not dest_parts:
+                    if show_progress:
+                        _print_progress(idx, total)
+                    continue
+                if root_to_strip and dest_parts[0] == root_to_strip:
+                    dest_parts = dest_parts[1:]
+                if not dest_parts:
+                    if show_progress:
+                        _print_progress(idx, total)
+                    continue
+                if any(part == ".." for part in dest_parts):
+                    if show_progress:
+                        _print_progress(idx, total)
+                    continue
+                destination = target_dir.joinpath(*dest_parts)
+                if info.is_dir():
+                    destination.mkdir(parents=True, exist_ok=True)
+                else:
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    with archive.open(info, "r") as src, destination.open("wb") as dst:
+                        shutil.copyfileobj(src, dst)
                 if show_progress:
                     _print_progress(idx, total)
-                continue
-            if root_to_strip and dest_parts[0] == root_to_strip:
-                dest_parts = dest_parts[1:]
-            if not dest_parts:
-                if show_progress:
-                    _print_progress(idx, total)
-                continue
-            if any(part == ".." for part in dest_parts):
-                if show_progress:
-                    _print_progress(idx, total)
-                continue
-            destination = target_dir.joinpath(*dest_parts)
-            if info.is_dir():
-                destination.mkdir(parents=True, exist_ok=True)
-            else:
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                with archive.open(info, "r") as src, destination.open("wb") as dst:
-                    shutil.copyfileobj(src, dst)
-            if show_progress:
-                _print_progress(idx, total)
-        if show_progress and total:
-            print()
+            if show_progress and total:
+                print()
+    except zipfile.BadZipFile as e:
+        raise Exception("解压失败：压缩包文件损坏（CRC-32 校验失败）\n请重新下载一键安装器压缩包，确保文件完整后再试。") from e
+    except Exception as e:
+        # 重新抛出其他异常
+        if "CRC" in str(e).upper():
+            raise Exception("解压失败：压缩包文件损坏（CRC-32 校验失败）\n请重新下载一键安装器压缩包，确保文件完整后再试。") from e
+        raise
 
 
 def open_in_explorer(path: Path) -> None:
