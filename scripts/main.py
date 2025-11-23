@@ -3,7 +3,7 @@
 import sys
 
 from . import config
-from .installers import InstallerState, auto_install, install_mod, install_dotnet_environment, launch_game, select_install_path, check_update, auto_update
+from .installers import InstallerState, auto_install, install_mod, install_dotnet_environment, launch_game, select_install_path, check_update, auto_update, uninstall_game
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
 
@@ -49,6 +49,7 @@ def print_other_menu() -> None:
     print(color_text("1) 安装 .NET 环境", Colors.CYAN))
     print(color_text("2) 检查并更新", Colors.CYAN))
     print(color_text("3) 安装内置 MOD", Colors.CYAN))
+    print(color_text("4) 卸载游戏", Colors.CYAN))
     print(color_text("0) 返回主菜单", Colors.RED))
 
 
@@ -65,6 +66,8 @@ def handle_other_menu(state: InstallerState) -> None:
         elif choice == "3":
             mods = config.discover_mods()
             install_mod(state, mods)
+        elif choice == "4":
+            uninstall_game(state)
         elif choice == "0":
             print("已返回主菜单。")
             return
