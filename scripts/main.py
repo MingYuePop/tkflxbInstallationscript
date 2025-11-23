@@ -3,7 +3,8 @@
 import sys
 
 from . import config
-from .installers import InstallerState, auto_install, install_mod, install_dotnet_environment, launch_game, select_install_path, check_update, auto_update, uninstall_game
+from .installers import InstallerState, auto_install, install_mod, install_dotnet_environment, launch_game, select_install_path, uninstall_game
+from .updater import check_update, auto_update
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
 
