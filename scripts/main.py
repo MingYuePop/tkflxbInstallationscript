@@ -6,9 +6,9 @@ from . import config
 from .installers import (
     InstallerState,
     auto_install,
-    launch_game,
     select_install_path,
 )
+from .launcher_runner import launch_game
 from .dotnet_env import install_dotnet_environment
 from .mod_manager import install_mod, uninstall_mod
 from .server_version import download_server_version, switch_server_version
