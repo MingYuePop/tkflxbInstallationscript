@@ -58,11 +58,18 @@ def print_other_menu() -> None:
     print("\n====== 其他功能 ======")
     print(color_text("1) 安装 .NET 环境", Colors.CYAN))
     print(color_text("2) 检查并更新软件", Colors.CYAN))
-    print(color_text("3) 安装内置 MOD", Colors.CYAN))
-    print(color_text("4) 删除已安装的 MOD", Colors.CYAN))
-    print(color_text("5) 服务端版本管理", Colors.CYAN))
-    print(color_text("6) 卸载游戏", Colors.CYAN))
+    print(color_text("3) MOD 管理", Colors.CYAN))
+    print(color_text("4) 服务端版本管理", Colors.CYAN))
+    print(color_text("5) 卸载游戏", Colors.CYAN))
     print(color_text("0) 返回主菜单", Colors.RED))
+
+
+def print_mod_menu() -> None:
+    """打印 MOD 管理子菜单。"""
+    print("\n====== MOD 管理 ======")
+    print(color_text("1) 安装内置 MOD", Colors.CYAN))
+    print(color_text("2) 删除已安装的 MOD", Colors.CYAN))
+    print(color_text("0) 返回上级菜单", Colors.RED))
 
 
 def print_server_version_menu() -> None:
@@ -71,6 +78,25 @@ def print_server_version_menu() -> None:
     print(color_text("1) 下载服务端版本", Colors.CYAN))
     print(color_text("2) 切换服务端版本", Colors.CYAN))
     print(color_text("0) 返回上级菜单", Colors.RED))
+
+
+def handle_mod_menu(state: InstallerState) -> None:
+    """处理 MOD 管理子菜单的选择。"""
+    while True:
+        clear_screen()
+        print_mod_menu()
+        choice = input("请选择功能：").strip()
+        if choice == "1":
+            mods = config.discover_mods()
+            install_mod(state, mods)
+        elif choice == "2":
+            uninstall_mod(state)
+        elif choice == "0":
+            print("已返回上级菜单。")
+            return
+        else:
+            print("无效选项，请重新输入。")
+        input("\n按回车键继续...")
 
 
 def handle_server_version_menu(state: InstallerState) -> None:
@@ -102,13 +128,10 @@ def handle_other_menu(state: InstallerState) -> None:
         elif choice == "2":
             auto_update()
         elif choice == "3":
-            mods = config.discover_mods()
-            install_mod(state, mods)
+            handle_mod_menu(state)
         elif choice == "4":
-            uninstall_mod(state)
-        elif choice == "5":
             handle_server_version_menu(state)
-        elif choice == "6":
+        elif choice == "5":
             uninstall_game(state)
         elif choice == "0":
             print("已返回主菜单。")
