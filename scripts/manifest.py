@@ -59,8 +59,18 @@ def record_mod_installation(target_root: Path, mod_name: str, files: List[str]) 
         payload = json.loads(path.read_text(encoding="utf-8"))
         if "mods" not in payload:
             payload["mods"] = {}
+        
+        # 提取文件所在的文件夹（去重）
+        directories = set()
+        for file_path in files:
+            # 获取文件的父目录
+            parent = str(Path(file_path).parent)
+            if parent and parent != ".":
+                directories.add(parent)
+        
         payload["mods"][mod_name] = {
             "files": files,
+            "directories": sorted(list(directories)),
             "installed_at": datetime.now().isoformat(timespec="seconds"),
         }
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

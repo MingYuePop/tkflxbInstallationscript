@@ -132,7 +132,24 @@ def uninstall_mod(state: "InstallerState") -> None:
             print(f"删除文件失败 {file_path}: {exc}")
             skipped_count += 1
 
+    # 删除 MOD 的文件夹（如果为空）
+    directories = mod_info.get("directories", [])
+    deleted_dirs_count = 0
+    for dir_path in sorted(directories, reverse=True):  # 从深层目录开始删除
+        full_dir_path = install_path / dir_path
+        try:
+            if full_dir_path.exists() and full_dir_path.is_dir():
+                # 检查目录是否为空
+                if not any(full_dir_path.iterdir()):
+                    full_dir_path.rmdir()
+                    deleted_dirs_count += 1
+        except Exception as exc:
+            # 目录不为空或删除失败，跳过
+            pass
+
     remove_mod_record(install_path, mod_name)
 
     print(f"MOD {mod_name} 卸载完成。")
     print(f"已删除 {deleted_count} 个文件，跳过 {skipped_count} 个文件。")
+    if deleted_dirs_count > 0:
+        print(f"已删除 {deleted_dirs_count} 个空文件夹。")
