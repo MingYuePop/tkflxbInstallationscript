@@ -53,13 +53,57 @@ class ModPackage:
 
 
 # 可用版本列表，可随时追加新版本
+# 注意：这是本地硬编码的版本列表，服务端版本现在从 announcement.json 动态加载
 AVAILABLE_VERSIONS: List[GameVersion] = [
+    GameVersion(
+        label="4.0.5",
+        server_zip="SPT-4.0.5-40087-1bba508.zip",
+        client_zip="Client.0.16.9.0.40087.zip",
+    ),
     GameVersion(
         label="4.0.6",
         server_zip="SPT-4.0.6-40087-d13d2dd.zip",
         client_zip="Client.0.16.9.0.40087.zip",
-    ),
+    ),    
 ]
+
+
+@dataclass(frozen=True)
+class ServerVersion:
+    """定义一个可用的服务端版本。"""
+    version: str
+    server_zip: str
+    download_url: str
+
+
+def discover_server_versions_from_announcement() -> List[ServerVersion]:
+    """
+    从 announcement.json 中动态加载服务端版本列表。
+    如果加载失败，返回空列表。
+    """
+    try:
+        import requests
+        response = requests.get(ANNOUNCEMENT_URL, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        server_versions = data.get("server_versions", [])
+        versions = []
+        for item in server_versions:
+            try:
+                version = ServerVersion(
+                    version=item.get("version", ""),
+                    server_zip=item.get("server_zip", ""),
+                    download_url=item.get("download_url", "")
+                )
+                if version.version and version.server_zip and version.download_url:
+                    versions.append(version)
+            except Exception:
+                continue
+        return versions
+    except Exception:
+        # 网络错误或解析失败时返回空列表
+        return []
 
 
 def discover_mods() -> List[ModPackage]:
