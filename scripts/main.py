@@ -4,9 +4,15 @@ import sys
 
 from . import config
 from .installers import (
-    InstallerState, auto_install, install_mod, install_dotnet_environment, 
-    launch_game, select_install_path, download_server_version, switch_server_version, uninstall_mod
+    InstallerState,
+    auto_install,
+    install_dotnet_environment,
+    launch_game,
+    select_install_path,
+    download_server_version,
+    switch_server_version,
 )
+from .mod_manager import install_mod, uninstall_mod
 from .updater import check_update, auto_update
 from .uninstaller import uninstall_game
 from .utils import Colors, clear_screen, color_text

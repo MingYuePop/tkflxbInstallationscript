@@ -2,15 +2,19 @@ import json
 import shutil
 import subprocess
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
 from . import config
-from .config import GameVersion, ModPackage
+from .config import GameVersion
 from . import checker
 from . import utils
-from .utils import Colors, color_text
+from .manifest import (
+    load_manifest,
+    manifest_path,
+    update_manifest_server_version,
+    write_manifest,
+)
 
 # 记住上一次有效的安装路径
 _PERSIST_FILE = config.RESOURCES_DIR / "config.json"
@@ -71,94 +75,6 @@ def _confirm(message: str) -> bool:
     return reply == "y"
 
 
-def _manifest_path(target_root: Path) -> Path:
-    """返回标记文件路径。"""
-    return target_root / config.MANIFEST_FILE
-
-
-def _load_manifest(target_root: Path) -> Optional[dict]:
-    """读取标记文件，无法读取时返回 None。"""
-    path = _manifest_path(target_root)
-    if not path.exists():
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-
-
-def _write_manifest(target_root: Path, version: GameVersion) -> None:
-    """写入标记文件，记录已安装的版本和时间。"""
-    path = _manifest_path(target_root)
-    payload = {
-        "version": version.label,
-        "server_zip": version.server_zip,
-        "client_zip": version.client_zip,
-        "installed_at": datetime.now().isoformat(timespec="seconds"),
-        "mods": {},  # 初始化 MOD 记录
-    }
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def _update_manifest_server_version(target_root: Path, server_version: str, server_zip: str) -> None:
-    """更新标记文件中的服务端版本信息。"""
-    path = _manifest_path(target_root)
-    if not path.exists():
-        return
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        payload["version"] = server_version
-        payload["server_zip"] = server_zip
-        payload["updated_at"] = datetime.now().isoformat(timespec="seconds")
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        pass
-
-
-def _record_mod_installation(target_root: Path, mod_name: str, files: List[str]) -> None:
-    """记录 MOD 安装的文件列表到标记文件。"""
-    path = _manifest_path(target_root)
-    if not path.exists():
-        return
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        if "mods" not in payload:
-            payload["mods"] = {}
-        payload["mods"][mod_name] = {
-            "files": files,
-            "installed_at": datetime.now().isoformat(timespec="seconds"),
-        }
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        pass
-
-
-def _get_mod_files(target_root: Path, mod_name: str) -> Optional[List[str]]:
-    """获取已安装 MOD 的文件列表。"""
-    manifest = _load_manifest(target_root)
-    if not manifest:
-        return None
-    mods = manifest.get("mods", {})
-    mod_info = mods.get(mod_name)
-    if not mod_info:
-        return None
-    return mod_info.get("files", [])
-
-
-def _remove_mod_record(target_root: Path, mod_name: str) -> None:
-    """从标记文件中删除 MOD 记录。"""
-    path = _manifest_path(target_root)
-    if not path.exists():
-        return
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        if "mods" in payload and mod_name in payload["mods"]:
-            del payload["mods"][mod_name]
-            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        pass
-
-
 def select_install_path(state: InstallerState) -> None:
     """选取安装目录并校验：必须为空且目录名不含中文。"""
     while True:
@@ -175,7 +91,7 @@ def select_install_path(state: InstallerState) -> None:
             time.sleep(2)
             continue
 
-        manifest = _load_manifest(chosen)
+        manifest = load_manifest(chosen)
         if manifest:
             # 已有安装标记，直接使用该路径
             state.install_path = chosen
@@ -205,7 +121,7 @@ def _require_install_path(state: InstallerState, enforce_empty: bool = False) ->
     if not state.install_path:
         print("请先通过选项 1 选择安装路径。")
         return None
-    if enforce_empty and not _load_manifest(state.install_path):
+    if enforce_empty and not load_manifest(state.install_path):
         # 只有在不存在标记文件时才要求空目录；有标记视为已安装目录。
         error = utils.ensure_empty_directory(state.install_path)
         if error:
@@ -353,7 +269,7 @@ def auto_install(state: InstallerState, versions: List[GameVersion]) -> None:
     version = versions[selection - 1]
 
     # 如果目录已有标记文件，则直接提示已安装并跳过重装
-    manifest = _load_manifest(install_path)
+    manifest = load_manifest(install_path)
     if manifest:
         print(f"该目录已安装版本 {manifest.get('version', '未知')}，已跳过自动安装。")
         return
@@ -387,63 +303,12 @@ def auto_install(state: InstallerState, versions: List[GameVersion]) -> None:
 
     # 安装完成后写入标记
     try:
-        _write_manifest(install_path, version)
+        write_manifest(install_path, version)
     except Exception as exc:  # 标记写入失败不影响安装结果
         print(f"写入安装标记失败（可忽略）: {exc}")
 
     print("安装完成，已将文件解压到:", install_path)
     _post_install_dotnet_flow()
-
-
-def install_mod(state: InstallerState, mods: List[ModPackage]) -> None:
-    """安装内置 MOD：选择 zip 并覆盖到安装目录。"""
-    install_path = _require_install_path(state, enforce_empty=False)
-    if not install_path:
-        return
-    spt_dir = state.spt_dir()
-    if not spt_dir or not spt_dir.exists():
-        print(f"未找到 {config.TARGET_SUBDIR} 文件夹，请先完成自动安装。")
-        return
-    expected_server = spt_dir / "SPT.Server.exe"
-    if not expected_server.exists():
-        print("未检测到 SPT.Server.exe，可能尚未安装完成。")
-        return
-
-    if not mods:
-        print("未发现可用的 MOD 包。请将 zip 放入 resources/mods。")
-        return
-
-    print("可用 MOD：")
-    for idx, mod in enumerate(mods, start=1):
-        print(f"{idx}. {mod.display_name}")
-    try:
-        selection = int(input("请选择要安装的 MOD（0 取消）：").strip() or "0")
-    except ValueError:
-        print("输入无效。")
-        return
-    if selection == 0:
-        print("已取消。")
-        return
-    if selection < 1 or selection > len(mods):
-        print("编号不存在。")
-        return
-    mod = mods[selection - 1]
-    mod_zip = config.MODS_DIR / mod.zip_name
-    if not mod_zip.exists():
-        print(f"未找到 MOD 压缩包: {mod_zip}")
-        return
-
-    if not _confirm(f"即将安装 MOD: {mod.display_name}，并覆盖同名文件，确认吗？"):
-        print("已取消。")
-        return
-    try:
-        extracted_files = utils.extract_zip(mod_zip, install_path, strip_common_root=False, show_progress=True)
-        # 记录 MOD 安装的文件列表到标记文件
-        _record_mod_installation(install_path, mod.display_name, extracted_files)
-    except Exception as exc:
-        print(f"安装 MOD 失败: {exc}")
-        return
-    print(f"MOD {mod.display_name} 安装完成。")
 
 
 def launch_game(state: InstallerState) -> None:
@@ -488,7 +353,7 @@ def download_server_version(state: InstallerState) -> None:
         return
     
     # 检查是否已安装
-    manifest = _load_manifest(install_path)
+    manifest = load_manifest(install_path)
     if not manifest:
         print("未检测到已安装的游戏，请先完成自动安装。")
         return
@@ -556,7 +421,7 @@ def switch_server_version(state: InstallerState) -> None:
         return
     
     # 检查标记文件
-    manifest = _load_manifest(install_path)
+    manifest = load_manifest(install_path)
     if not manifest:
         print("未检测到已安装的游戏。")
         return
@@ -607,7 +472,7 @@ def switch_server_version(state: InstallerState) -> None:
         utils.extract_zip(selected_zip, install_path, strip_common_root=True, show_progress=True)
         
         # 更新标记文件
-        _update_manifest_server_version(install_path, new_version, selected_zip.name)
+        update_manifest_server_version(install_path, new_version, selected_zip.name)
         
         print(f"成功切换到版本 {new_version}。")
     except PermissionError as exc:
@@ -617,71 +482,3 @@ def switch_server_version(state: InstallerState) -> None:
     except Exception as exc:
         print(f"切换版本失败: {exc}")
 
-
-def uninstall_mod(state: InstallerState) -> None:
-    """卸载已安装的 MOD：根据标记文件删除 MOD 文件。"""
-    install_path = _require_install_path(state, enforce_empty=False)
-    if not install_path:
-        return
-    
-    # 读取标记文件
-    manifest = _load_manifest(install_path)
-    if not manifest:
-        print("未检测到已安装的游戏。")
-        return
-    
-    mods = manifest.get("mods", {})
-    if not mods:
-        print("未找到已安装的 MOD。")
-        return
-    
-    # 显示已安装的 MOD 列表
-    print("已安装的 MOD：")
-    mod_names = list(mods.keys())
-    for idx, mod_name in enumerate(mod_names, start=1):
-        mod_info = mods[mod_name]
-        file_count = len(mod_info.get("files", []))
-        print(f"{idx}. {mod_name} ({file_count} 个文件)")
-    
-    try:
-        selection = int(input("请选择要卸载的 MOD（0 取消）：").strip() or "0")
-    except ValueError:
-        print("输入无效。")
-        return
-    
-    if selection == 0:
-        print("已取消。")
-        return
-    
-    if selection < 1 or selection > len(mod_names):
-        print("编号不存在。")
-        return
-    
-    mod_name = mod_names[selection - 1]
-    mod_info = mods[mod_name]
-    files_to_delete = mod_info.get("files", [])
-    
-    if not _confirm(f"确认卸载 MOD: {mod_name}（将删除 {len(files_to_delete)} 个文件）吗？"):
-        print("已取消。")
-        return
-    
-    # 删除文件
-    deleted_count = 0
-    skipped_count = 0
-    for file_path in files_to_delete:
-        full_path = install_path / file_path
-        try:
-            if full_path.exists():
-                full_path.unlink()
-                deleted_count += 1
-            else:
-                skipped_count += 1
-        except Exception as exc:
-            print(f"删除文件失败 {file_path}: {exc}")
-            skipped_count += 1
-    
-    # 从标记文件中删除 MOD 记录
-    _remove_mod_record(install_path, mod_name)
-    
-    print(f"MOD {mod_name} 卸载完成。")
-    print(f"已删除 {deleted_count} 个文件，跳过 {skipped_count} 个文件。")
