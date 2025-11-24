@@ -6,7 +6,7 @@ import sys
 import zipfile
 import requests
 from pathlib import Path, PurePosixPath
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 
 # ANSI 颜色定义，用于菜单/提示高亮
 class Colors:
@@ -117,8 +117,9 @@ def _print_progress(current: int, total: int) -> None:
     print(f"\r[{bar}] {percent:3d}% ({current}/{total})", end="", flush=True)
 
 
-def extract_zip(zip_path: Path, target_dir: Path, strip_common_root: bool = False, show_progress: bool = False) -> None:
-    """解压 zip 到目标目录，可选去除统一顶层目录，并显示进度。"""
+def extract_zip(zip_path: Path, target_dir: Path, strip_common_root: bool = False, show_progress: bool = False) -> List[str]:
+    """解压 zip 到目标目录，可选去除统一顶层目录，并显示进度。返回解压的文件列表（相对路径）。"""
+    extracted_files = []
     try:
         with zipfile.ZipFile(zip_path) as archive:
             entries = archive.infolist()
@@ -147,6 +148,9 @@ def extract_zip(zip_path: Path, target_dir: Path, strip_common_root: bool = Fals
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     with archive.open(info, "r") as src, destination.open("wb") as dst:
                         shutil.copyfileobj(src, dst)
+                # 记录解压的文件（仅非目录）
+                if not info.is_dir():
+                    extracted_files.append(str(Path(*dest_parts)))
                 if show_progress:
                     _print_progress(idx, total)
             if show_progress and total:
@@ -158,6 +162,7 @@ def extract_zip(zip_path: Path, target_dir: Path, strip_common_root: bool = Fals
         if "CRC" in str(e).upper():
             raise Exception("解压失败：压缩包文件损坏（CRC-32 校验失败）\n请重新下载一键安装器压缩包，确保文件完整后再试。") from e
         raise
+    return extracted_files
 
 
 def open_in_explorer(path: Path) -> None:

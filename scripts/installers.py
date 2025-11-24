@@ -95,6 +95,7 @@ def _write_manifest(target_root: Path, version: GameVersion) -> None:
         "server_zip": version.server_zip,
         "client_zip": version.client_zip,
         "installed_at": datetime.now().isoformat(timespec="seconds"),
+        "mods": {},  # 初始化 MOD 记录
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -110,6 +111,50 @@ def _update_manifest_server_version(target_root: Path, server_version: str, serv
         payload["server_zip"] = server_zip
         payload["updated_at"] = datetime.now().isoformat(timespec="seconds")
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _record_mod_installation(target_root: Path, mod_name: str, files: List[str]) -> None:
+    """记录 MOD 安装的文件列表到标记文件。"""
+    path = _manifest_path(target_root)
+    if not path.exists():
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if "mods" not in payload:
+            payload["mods"] = {}
+        payload["mods"][mod_name] = {
+            "files": files,
+            "installed_at": datetime.now().isoformat(timespec="seconds"),
+        }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _get_mod_files(target_root: Path, mod_name: str) -> Optional[List[str]]:
+    """获取已安装 MOD 的文件列表。"""
+    manifest = _load_manifest(target_root)
+    if not manifest:
+        return None
+    mods = manifest.get("mods", {})
+    mod_info = mods.get(mod_name)
+    if not mod_info:
+        return None
+    return mod_info.get("files", [])
+
+
+def _remove_mod_record(target_root: Path, mod_name: str) -> None:
+    """从标记文件中删除 MOD 记录。"""
+    path = _manifest_path(target_root)
+    if not path.exists():
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if "mods" in payload and mod_name in payload["mods"]:
+            del payload["mods"][mod_name]
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
         pass
 
@@ -392,7 +437,9 @@ def install_mod(state: InstallerState, mods: List[ModPackage]) -> None:
         print("已取消。")
         return
     try:
-        utils.extract_zip(mod_zip, install_path, strip_common_root=False, show_progress=True)
+        extracted_files = utils.extract_zip(mod_zip, install_path, strip_common_root=False, show_progress=True)
+        # 记录 MOD 安装的文件列表到标记文件
+        _record_mod_installation(install_path, mod.display_name, extracted_files)
     except Exception as exc:
         print(f"安装 MOD 失败: {exc}")
         return
@@ -569,3 +616,72 @@ def switch_server_version(state: InstallerState) -> None:
         print(f"解决方案：请关闭 SPT.Server.exe 后再试")
     except Exception as exc:
         print(f"切换版本失败: {exc}")
+
+
+def uninstall_mod(state: InstallerState) -> None:
+    """卸载已安装的 MOD：根据标记文件删除 MOD 文件。"""
+    install_path = _require_install_path(state, enforce_empty=False)
+    if not install_path:
+        return
+    
+    # 读取标记文件
+    manifest = _load_manifest(install_path)
+    if not manifest:
+        print("未检测到已安装的游戏。")
+        return
+    
+    mods = manifest.get("mods", {})
+    if not mods:
+        print("未找到已安装的 MOD。")
+        return
+    
+    # 显示已安装的 MOD 列表
+    print("已安装的 MOD：")
+    mod_names = list(mods.keys())
+    for idx, mod_name in enumerate(mod_names, start=1):
+        mod_info = mods[mod_name]
+        file_count = len(mod_info.get("files", []))
+        print(f"{idx}. {mod_name} ({file_count} 个文件)")
+    
+    try:
+        selection = int(input("请选择要卸载的 MOD（0 取消）：").strip() or "0")
+    except ValueError:
+        print("输入无效。")
+        return
+    
+    if selection == 0:
+        print("已取消。")
+        return
+    
+    if selection < 1 or selection > len(mod_names):
+        print("编号不存在。")
+        return
+    
+    mod_name = mod_names[selection - 1]
+    mod_info = mods[mod_name]
+    files_to_delete = mod_info.get("files", [])
+    
+    if not _confirm(f"确认卸载 MOD: {mod_name}（将删除 {len(files_to_delete)} 个文件）吗？"):
+        print("已取消。")
+        return
+    
+    # 删除文件
+    deleted_count = 0
+    skipped_count = 0
+    for file_path in files_to_delete:
+        full_path = install_path / file_path
+        try:
+            if full_path.exists():
+                full_path.unlink()
+                deleted_count += 1
+            else:
+                skipped_count += 1
+        except Exception as exc:
+            print(f"删除文件失败 {file_path}: {exc}")
+            skipped_count += 1
+    
+    # 从标记文件中删除 MOD 记录
+    _remove_mod_record(install_path, mod_name)
+    
+    print(f"MOD {mod_name} 卸载完成。")
+    print(f"已删除 {deleted_count} 个文件，跳过 {skipped_count} 个文件。")

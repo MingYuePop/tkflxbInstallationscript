@@ -5,7 +5,7 @@ import sys
 from . import config
 from .installers import (
     InstallerState, auto_install, install_mod, install_dotnet_environment, 
-    launch_game, select_install_path, download_server_version, switch_server_version
+    launch_game, select_install_path, download_server_version, switch_server_version, uninstall_mod
 )
 from .updater import check_update, auto_update
 from .uninstaller import uninstall_game
@@ -54,8 +54,9 @@ def print_other_menu() -> None:
     print(color_text("1) 安装 .NET 环境", Colors.CYAN))
     print(color_text("2) 检查并更新软件", Colors.CYAN))
     print(color_text("3) 安装内置 MOD", Colors.CYAN))
-    print(color_text("4) 服务端版本管理", Colors.CYAN))
-    print(color_text("5) 卸载游戏", Colors.CYAN))
+    print(color_text("4) 删除已安装的 MOD", Colors.CYAN))
+    print(color_text("5) 服务端版本管理", Colors.CYAN))
+    print(color_text("6) 卸载游戏", Colors.CYAN))
     print(color_text("0) 返回主菜单", Colors.RED))
 
 
@@ -99,8 +100,10 @@ def handle_other_menu(state: InstallerState) -> None:
             mods = config.discover_mods()
             install_mod(state, mods)
         elif choice == "4":
-            handle_server_version_menu(state)
+            uninstall_mod(state)
         elif choice == "5":
+            handle_server_version_menu(state)
+        elif choice == "6":
             uninstall_game(state)
         elif choice == "0":
             print("已返回主菜单。")
