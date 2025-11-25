@@ -76,6 +76,14 @@ class ServerVersion:
     download_url: str
 
 
+@dataclass(frozen=True)
+class ModVersion:
+    """定义一个可下载的 MOD 版本。"""
+    name: str
+    zip_name: str
+    download_url: str
+
+
 def discover_server_versions_from_announcement() -> List[ServerVersion]:
     """
     从 announcement.json 中动态加载服务端版本列表。
@@ -115,6 +123,36 @@ def discover_mods() -> List[ModPackage]:
     for mod_zip in sorted(MODS_DIR.glob("*.zip")):
         mods.append(ModPackage(display_name=mod_zip.stem, zip_name=mod_zip.name))
     return mods
+
+
+def discover_mod_versions_from_announcement() -> List[ModVersion]:
+    """
+    从 announcement.json 中动态加载可下载的 MOD 版本列表。
+    如果加载失败，返回空列表。
+    """
+    try:
+        import requests
+        response = requests.get(ANNOUNCEMENT_URL, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        mod_versions = data.get("mod_versions", [])
+        versions = []
+        for item in mod_versions:
+            try:
+                version = ModVersion(
+                    name=item.get("name", ""),
+                    zip_name=item.get("zip_name", ""),
+                    download_url=item.get("download_url", "")
+                )
+                if version.name and version.zip_name and version.download_url:
+                    versions.append(version)
+            except Exception:
+                continue
+        return versions
+    except Exception:
+        # 网络错误或解析失败时返回空列表
+        return []
 
 
 AVAILABLE_MODS = discover_mods()

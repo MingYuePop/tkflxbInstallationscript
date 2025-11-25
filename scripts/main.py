@@ -10,7 +10,7 @@ from .installers import (
 )
 from .launcher_runner import launch_game
 from .dotnet_env import install_dotnet_environment
-from .mod_manager import install_mod, uninstall_mod
+from .mod_manager import install_mod, uninstall_mod, download_mod, uninstall_all_mods
 from .server_version import download_server_version, switch_server_version
 from .updater import check_update, auto_update
 from .uninstaller import uninstall_game
@@ -67,8 +67,10 @@ def print_other_menu() -> None:
 def print_mod_menu() -> None:
     """打印 MOD 管理子菜单。"""
     print("\n====== MOD 管理 ======")
-    print(color_text("1) 安装内置 MOD", Colors.CYAN))
-    print(color_text("2) 删除已安装的 MOD", Colors.CYAN))
+    print(color_text("1) 下载 MOD", Colors.CYAN))
+    print(color_text("2) 安装内置 MOD", Colors.CYAN))
+    print(color_text("3) 删除已安装的 MOD", Colors.CYAN))
+    print(color_text("4) 一键卸载所有 MOD", Colors.CYAN))
     print(color_text("0) 返回上级菜单", Colors.RED))
 
 
@@ -87,10 +89,14 @@ def handle_mod_menu(state: InstallerState) -> None:
         print_mod_menu()
         choice = input("请选择功能：").strip()
         if choice == "1":
+            download_mod(state)
+        elif choice == "2":
             mods = config.discover_mods()
             install_mod(state, mods)
-        elif choice == "2":
+        elif choice == "3":
             uninstall_mod(state)
+        elif choice == "4":
+            uninstall_all_mods(state)
         elif choice == "0":
             print("已返回上级菜单。")
             return
