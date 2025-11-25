@@ -53,6 +53,12 @@ def _auto_install_dotnet(missing_override: Optional[List[str]] = None, require_c
                 print(f"{name} 安装失败（错误码 1638）。")
                 print("您的电脑已安装了其他版本的 .NET，此版本无需安装。")
                 print("可以直接启动游戏，无需重复安装。")
+                
+            elif exc.returncode == 1:
+                print(f"{name} 安装失败（错误码 1）。")
+                print("您的电脑已安装了其他版本的 .NET，此版本无需安装。")
+                print("可以直接启动游戏，无需重复安装。")
+                
             else:
                 print(f"{name} 安装失败，退出码 {exc.returncode}。")
         except Exception as exc:

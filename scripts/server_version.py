@@ -124,6 +124,7 @@ def switch_server_version(state: "InstallerState") -> None:
         print("编号不存在。")
         return
 
+    # 使用压缩包名字进行判断
     selected_zip = sorted_zips[selection - 1]
     if selected_zip.name == current_server_zip:
         print(f"已经是版本 {current_version}，无需切换。")

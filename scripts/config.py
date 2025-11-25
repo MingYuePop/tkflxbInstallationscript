@@ -56,11 +56,6 @@ class ModPackage:
 # 注意：这是本地硬编码的版本列表，服务端版本现在从 announcement.json 动态加载
 AVAILABLE_VERSIONS: List[GameVersion] = [
     GameVersion(
-        label="4.0.5",
-        server_zip="SPT-4.0.5-40087-1bba508.zip",
-        client_zip="Client.0.16.9.0.40087.zip",
-    ),
-    GameVersion(
         label="4.0.6",
         server_zip="SPT-4.0.6-40087-d13d2dd.zip",
         client_zip="Client.0.16.9.0.40087.zip",
