@@ -50,7 +50,7 @@ def update_manifest_server_version(target_root: Path, server_version: str, serve
         pass
 
 
-def record_mod_installation(target_root: Path, mod_name: str, files: List[str]) -> None:
+def record_mod_installation(mod_version, mod_supported_versions, target_root: Path, mod_name: str, files: List[str]) -> None:
     """记录 MOD 安装的文件列表到标记文件。"""
     path = manifest_path(target_root)
     if not path.exists():
@@ -69,6 +69,8 @@ def record_mod_installation(target_root: Path, mod_name: str, files: List[str]) 
                 directories.add(parent)
         
         payload["mods"][mod_name] = {
+            "mod_version": mod_version,
+            "mod_supported_versions": mod_supported_versions,
             "files": files,
             "directories": sorted(list(directories)),
             "installed_at": datetime.now().isoformat(timespec="seconds"),

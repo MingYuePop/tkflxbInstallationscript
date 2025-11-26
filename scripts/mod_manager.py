@@ -25,6 +25,26 @@ def _require_install_path(state: "InstallerState") -> Optional[Path]:
     return state.install_path
 
 
+def _extract_mod_version(display_name: str) -> str:
+    """从 display_name 中提取 MOD 版本号。
+    
+    假设格式为 'ModName-1.2.3' 或 'ModName_1.2.3'，
+    通过最后一个分隔符分割获取版本号。
+    """
+    # 尝试用 '-' 分割
+    if '-' in display_name:
+        parts = display_name.rsplit('-', 1)
+        if len(parts) == 2:
+            return parts[1]
+    # 尝试用 '_' 分割
+    if '_' in display_name:
+        parts = display_name.rsplit('_', 1)
+        if len(parts) == 2:
+            return parts[1]
+    # 无法提取版本号
+    return ""
+
+
 def install_mod(state: "InstallerState", mods: List[ModPackage]) -> None:
     """安装内置 MOD：选择 zip 并覆盖到安装目录。"""
     install_path = _require_install_path(state)
@@ -66,9 +86,18 @@ def install_mod(state: "InstallerState", mods: List[ModPackage]) -> None:
     if not _confirm(f"即将安装 MOD: {mod.display_name}，并覆盖同名文件，确认吗？"):
         print("已取消。")
         return
+    
+    # 提取 MOD 版本号（从 display_name 分割）
+    mod_version = _extract_mod_version(mod.display_name)
+    
+    # 获取当前安装的服务端版本（从标记文件读取）
+    manifest = load_manifest(install_path)
+    mod_supported_versions = manifest.get("version", "") if manifest else ""
+    
     try:
         extracted_files = utils.extract_zip(mod_zip, install_path, strip_common_root=False, show_progress=True)
-        record_mod_installation(install_path, mod.display_name, extracted_files)
+        # 写入标记文件,传入当前路径和mod名字,和安装 MOD 时返回并记录解压出的文件列表
+        record_mod_installation(mod_version, mod_supported_versions, install_path, mod.display_name, extracted_files)
     except Exception as exc:
         print(f"安装 MOD 失败: {exc}")
         return
