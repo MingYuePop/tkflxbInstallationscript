@@ -6,6 +6,7 @@ from typing import List, Optional, TYPE_CHECKING
 from . import config, utils
 from .config import ModPackage, ModVersion
 from .manifest import load_manifest, record_mod_installation, remove_mod_record
+from .process import close_spt_processes
 
 if TYPE_CHECKING:
     from .installers import InstallerState
@@ -58,6 +59,10 @@ def install_mod(state: "InstallerState", mods: List[ModPackage]) -> None:
     if not expected_server.exists():
         print("未检测到 SPT.Server.exe，可能尚未安装完成。")
         return
+    
+    # 检测并关闭 SPT 进程
+    if not close_spt_processes():
+        return
 
     if not mods:
         print("未发现可用的 MOD 包。请将 zip 放入 resources/mods。")
@@ -108,6 +113,10 @@ def uninstall_mod(state: "InstallerState") -> None:
     """卸载已安装的 MOD：根据标记文件删除 MOD 文件。"""
     install_path = _require_install_path(state)
     if not install_path:
+        return
+    
+    # 检测并关闭 SPT 进程
+    if not close_spt_processes():
         return
 
     manifest = load_manifest(install_path)
@@ -190,6 +199,10 @@ def uninstall_all_mods(state: "InstallerState") -> None:
     """一键卸载所有 MOD：删除 mods 目录和 BepInEx/plugins（保留 spt 文件夹）。"""
     install_path = _require_install_path(state)
     if not install_path:
+        return
+    
+    # 检测并关闭 SPT 进程
+    if not close_spt_processes():
         return
 
     # 定义要删除的目录

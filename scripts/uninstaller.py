@@ -6,6 +6,7 @@ from pathlib import Path
 
 from . import config
 from .installers import InstallerState, _require_install_path, _PERSIST_FILE, _PERSIST_KEY
+from .process import close_spt_processes
 
 
 def _confirm(message: str) -> bool:
@@ -35,6 +36,10 @@ def uninstall_game(state: InstallerState) -> None:
     
     if not _confirm("这是最后一次确认，确定要删除所有文件吗？"):
         print("已取消卸载。")
+        return
+    
+    # 检测并关闭 SPT 进程
+    if not close_spt_processes():
         return
     
     try:

@@ -66,7 +66,7 @@ def print_other_menu() -> None:
 
 def print_mod_menu() -> None:
     """打印 MOD 管理子菜单。"""
-    print("\n====== MOD 管理 (测试版) ======")
+    print("\n====== MOD 管理 ======")
     print(color_text("1) 下载 MOD", Colors.CYAN))
     print(color_text("2) 安装 MOD", Colors.CYAN))
     print(color_text("3) 删除已安装的 MOD", Colors.CYAN))

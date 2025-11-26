@@ -3,6 +3,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 from . import config, utils
 from .manifest import load_manifest, update_manifest_server_version
+from .process import close_spt_processes
 
 if TYPE_CHECKING:
     from .installers import InstallerState
@@ -133,6 +134,10 @@ def switch_server_version(state: "InstallerState") -> None:
     new_version = selected_zip.stem
     if not _confirm(f"确认切换到版本 {new_version} 吗？"):
         print("已取消。")
+        return
+    
+    # 检测并关闭 SPT 进程
+    if not close_spt_processes():
         return
 
     print(f"正在切换到版本 {new_version}...")
