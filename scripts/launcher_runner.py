@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
 from . import config
+from .process import check_spt_processes, close_spt_processes
 
 if TYPE_CHECKING:
     from .installers import InstallerState
@@ -26,6 +27,12 @@ def launch_game(state: "InstallerState") -> None:
     if not spt_dir or not spt_dir.exists():
         print(f"未找到 {config.TARGET_SUBDIR} 文件夹，请先完成自动安装。")
         return
+    
+    # 检测并关闭已运行的游戏进程
+    server_running, client_running, game_running = check_spt_processes()
+    if server_running or client_running or game_running:
+        if not close_spt_processes(confirm=True):
+            return
 
     server_exe = spt_dir / "SPT.Server.exe"
     launcher_exe = spt_dir / "patched_SPT.Launcher.exe"
