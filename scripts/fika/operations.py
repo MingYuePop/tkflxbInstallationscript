@@ -61,16 +61,9 @@ def start_fika(state: "InstallerState") -> None:
     print("  - 创建服务器：作为房主，其他玩家连接到你")
     print("  - 加入服务器：作为客户端，连接到房主")
     
-    if _confirm("\n是否现在退出游戏？"):
-        # 检查游戏进程
-        server_running, client_running, game_running = check_spt_processes()
-        if server_running or client_running or game_running:
-            if not close_spt_processes(confirm=True):
-                print("已取消操作。")
-                return
-        print("游戏已关闭。")
-    else:
-        print("请在完成初始化后手动关闭游戏。")
+    if _confirm("\n是否现在启动游戏？"):
+        from ..launcher_runner import launch_game
+        launch_game(state)
 
 
 def create_server(state: "InstallerState") -> None:
@@ -110,7 +103,7 @@ def create_server(state: "InstallerState") -> None:
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
     if not update_cfg_file(fika_cfg, "Network", {
         "Force IP": public_ip,
-        "Force Bind IP": "Disabled"
+        "Force Bind IP": "0.0.0.0"
     }):
         print("配置失败。")
         return
