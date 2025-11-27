@@ -39,6 +39,12 @@ def start_fika(state: "InstallerState") -> None:
         print(f"未找到 {config.TARGET_SUBDIR} 文件夹，请先完成自动安装。")
         return
     
+    # 检测并关闭已运行的游戏进程
+    server_running, client_running, game_running = check_spt_processes()
+    if server_running or client_running or game_running:
+        if not close_spt_processes(confirm=True):
+            return
+    
     print("\n====== 启动联机 ======")
     
     # 检查是否已安装 Fika
@@ -108,15 +114,15 @@ def create_server(state: "InstallerState") -> None:
         print("配置失败。")
         return
     
-    # 3. 修改 fika.jsonc
-    fika_config = spt_dir / "user" / "mods" / "fika-server" / "assets" / "configs" / "fika.jsonc"
-    if not fika_config.exists():
-        print(utils.color_text("错误: 未找到 fika.jsonc 配置文件，请先启动联机。", utils.Colors.RED))
+    # 3. 修改 http.json
+    http_config = spt_dir / "SPT_Data" / "configs" / "http.json"
+    if not http_config.exists():
+        print(utils.color_text("错误: 未找到 http.json 配置文件。", utils.Colors.RED))
         return
     
-    if not update_json_file(fika_config, {
-        "server.SPT.http.ip": "0.0.0.0",
-        "server.SPT.http.backendIp": public_ip
+    if not update_json_file(http_config, {
+        "ip": "0.0.0.0",
+        "backendIp": public_ip
     }):
         print("配置失败。")
         return
@@ -173,20 +179,20 @@ def join_server(state: "InstallerState") -> None:
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
     if not update_cfg_file(fika_cfg, "Network", {
         "Force IP": my_ip,
-        "Force Bind IP": "Disabled"
+        "Force Bind IP": "0.0.0.0"
     }):
         print("配置失败。")
         return
     
-    # 3. 修改 fika.jsonc
-    fika_config = spt_dir / "user" / "mods" / "fika-server" / "assets" / "configs" / "fika.jsonc"
-    if not fika_config.exists():
-        print(utils.color_text("错误: 未找到 fika.jsonc 配置文件，请先启动联机。", utils.Colors.RED))
+    # 3. 修改 http.json
+    http_config = spt_dir / "SPT_Data" / "configs" / "http.json"
+    if not http_config.exists():
+        print(utils.color_text("错误: 未找到 http.json 配置文件。", utils.Colors.RED))
         return
     
-    if not update_json_file(fika_config, {
-        "server.SPT.http.ip": "0.0.0.0",
-        "server.SPT.http.backendIp": "0.0.0.0"
+    if not update_json_file(http_config, {
+        "ip": "0.0.0.0",
+        "backendIp": "0.0.0.0"
     }):
         print("配置失败。")
         return
@@ -256,6 +262,14 @@ def close_fika(state: "InstallerState") -> None:
     update_json_file(launcher_config, {
         "Server.Url": "https://127.0.0.1:6969"
     })
+    
+    # 恢复 http.json 默认配置
+    http_config = spt_dir / "SPT_Data" / "configs" / "http.json"
+    if http_config.exists():
+        update_json_file(http_config, {
+            "ip": "127.0.0.1",
+            "backendIp": "127.0.0.1"
+        })
     
     print(utils.color_text("\n联机功能已关闭，所有联机组件已移除。", utils.Colors.GREEN))
     if deleted_count > 0:
