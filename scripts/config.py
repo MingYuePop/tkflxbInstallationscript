@@ -32,7 +32,7 @@ MANIFEST_FILE = ".spt_installed.json"
 # 在线公告 URL
 ANNOUNCEMENT_URL = "https://gitee.com/ripang/tkflxbInstallationscript/raw/main/announcement.json"
 # 软件版本（安装器程序本身的版本）
-SOFTWARE_VERSION = "1.2"
+SOFTWARE_VERSION = "1.3"
 
 
 @dataclass(frozen=True)
@@ -132,7 +132,7 @@ def discover_mod_versions_from_announcement() -> List[ModVersion]:
         data = response.json()
         
         mod_versions = data.get("mod_versions", [])
-        versions = []
+        versions = [] # version = [ModVersion(name="", zip_name="", download_url="")]
         for item in mod_versions:
             try:
                 version = ModVersion(
