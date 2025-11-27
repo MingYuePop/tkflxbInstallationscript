@@ -16,7 +16,7 @@ from .updater import check_update, auto_update
 from .uninstaller import uninstall_game
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
-from .fika_manager import start_fika, create_server, join_server, close_fika
+from .fika import start_fika, create_server, join_server, close_fika
 
 
 def print_menu(install_path: str | None) -> None:
@@ -89,7 +89,7 @@ def print_fika_menu(state: InstallerState) -> None:
     print("\n====== Fika 联机功能 ======")
     
     # 检查联机状态
-    from .fika_manager import is_fika_installed
+    from .fika import is_fika_installed
     if state.install_path:
         fika_status = is_fika_installed(state.install_path)
         if fika_status:

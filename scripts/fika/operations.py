@@ -1,18 +1,17 @@
-"""Fika 联机功能管理模块。"""
+"""Fika 联机主要操作函数。"""
 
-import json
 import shutil
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
-from . import config, utils
-from .config import ModVersion
-from .manifest import load_manifest, record_mod_installation
-from .process import check_spt_processes, close_spt_processes
-from .launcher_runner import launch_game, launch_client_only
+from .. import config, utils
+from ..process import check_spt_processes, close_spt_processes
+from ..launcher_runner import launch_game, launch_client_only
+from .config_utils import update_json_file, update_cfg_file
+from .installer import is_fika_installed, download_and_install_fika
 
 if TYPE_CHECKING:
-    from .installers import InstallerState
+    from ..installers import InstallerState
 
 
 def _confirm(message: str) -> bool:
@@ -27,209 +26,6 @@ def _require_install_path(state: "InstallerState") -> Optional[Path]:
         print("请先通过选项 1 选择安装路径。")
         return None
     return state.install_path
-
-
-def _get_fika_mod_from_announcement() -> Optional[ModVersion]:
-    """从公告中获取 Fika MOD 信息。"""
-    mod_versions = config.discover_mod_versions_from_announcement()
-    for mod in mod_versions:
-        if "fika" in mod.name.lower() or "联机" in mod.name:
-            return mod
-    return None
-
-
-def is_fika_installed(install_path: Path) -> bool:
-    """检查 Fika MOD 是否已安装。"""
-    fika_server_dir = install_path / config.TARGET_SUBDIR / "user" / "mods" / "fika-server"
-    fika_client_dir = install_path / "BepInEx" / "plugins" / "Fika"
-    return fika_server_dir.exists() and fika_client_dir.exists()
-
-
-def _download_and_install_fika(state: "InstallerState", silent: bool = True) -> bool:
-    """下载并安装 Fika MOD。
-    
-    Args:
-        state: 安装器状态
-        silent: 是否静默安装（不打扰用户）
-    
-    Returns:
-        True 表示安装成功，False 表示失败
-    """
-    install_path = state.install_path
-    if not install_path:
-        return False
-    
-    # 检查是否已安装
-    if is_fika_installed(install_path):
-        return True
-    
-    # 获取 Fika MOD 信息
-    fika_mod = _get_fika_mod_from_announcement()
-    if not fika_mod:
-        if not silent:
-            print("无法获取 Fika MOD 信息，请检查网络连接。")
-        return False
-    
-    # 确保 mods 文件夹存在
-    config.MODS_DIR.mkdir(parents=True, exist_ok=True)
-    
-    mod_zip_path = config.MODS_DIR / fika_mod.zip_name
-    
-    # 下载 MOD
-    if not mod_zip_path.exists():
-        if not silent:
-            print(f"正在下载 Fika 联机 MOD...")
-        success = utils.download_file(fika_mod.download_url, mod_zip_path, show_progress=not silent)
-        if not success:
-            if not silent:
-                print("Fika MOD 下载失败。")
-            return False
-    
-    # 安装 MOD
-    try:
-        if not silent:
-            print("正在安装 Fika 联机 MOD...")
-        extracted_files = utils.extract_zip(mod_zip_path, install_path, strip_common_root=False, show_progress=not silent)
-        
-        # 记录安装
-        mod_version = fika_mod.name.rsplit('-', 1)[-1] if '-' in fika_mod.name else ""
-        manifest = load_manifest(install_path)
-        mod_supported_versions = manifest.get("version", "") if manifest else ""
-        record_mod_installation(mod_version, mod_supported_versions, install_path, fika_mod.name, extracted_files)
-        
-        if not silent:
-            print("联机MOD已安装完成")
-        return True
-    except Exception as exc:
-        if not silent:
-            print(f"Fika MOD 安装失败: {exc}")
-        return False
-
-
-def _update_json_file(file_path: Path, updates: dict) -> bool:
-    """更新 JSON 文件中的指定字段。
-    
-    Args:
-        file_path: JSON 文件路径
-        updates: 要更新的字段，支持嵌套字典（如 {"server.ip": "0.0.0.0"}）
-    
-    Returns:
-        True 表示更新成功，False 表示失败
-    """
-    try:
-        if not file_path.exists():
-            print(f"配置文件不存在: {file_path}")
-            return False
-        
-        # 读取文件内容
-        content = file_path.read_text(encoding="utf-8")
-        
-        # 尝试解析 JSON（支持 jsonc 格式，去除注释）
-        try:
-            data = json.loads(content)
-        except json.JSONDecodeError:
-            # 如果是 jsonc，尝试简单去除注释
-            lines = []
-            for line in content.split('\n'):
-                # 去除行注释
-                if '//' in line:
-                    line = line[:line.index('//')]
-                lines.append(line)
-            content_no_comments = '\n'.join(lines)
-            data = json.loads(content_no_comments)
-        
-        # 更新字段
-        for key, value in updates.items():
-            if '.' in key:
-                # 支持嵌套字段，如 "server.ip"
-                keys = key.split('.')
-                current = data
-                for k in keys[:-1]:
-                    if k not in current:
-                        current[k] = {}
-                    current = current[k]
-                current[keys[-1]] = value
-            else:
-                data[key] = value
-        
-        # 写回文件
-        file_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        return True
-    except Exception as exc:
-        print(f"更新配置文件失败 {file_path}: {exc}")
-        return False
-
-
-def _update_cfg_file(file_path: Path, section: str, updates: dict) -> bool:
-    """更新 .cfg 配置文件中的指定字段（保留注释和格式）。
-    
-    Args:
-        file_path: .cfg 文件路径
-        section: 配置段落名称（如 "Network"，不包含方括号）
-        updates: 要更新的字段字典
-    
-    Returns:
-        True 表示更新成功，False 表示失败
-    """
-    try:
-        if not file_path.exists():
-            print(f"配置文件不存在: {file_path}")
-            return False
-        
-        # 读取文件内容
-        lines = file_path.read_text(encoding="utf-8").split('\n')
-        new_lines = []
-        in_target_section = False
-        section_found = False
-        updated_keys = set()
-        
-        for line in lines:
-            stripped = line.strip()
-            
-            # 检测段落开始
-            if stripped.startswith('[') and stripped.endswith(']'):
-                # 提取段落名称（移除方括号）
-                current_section = stripped[1:-1]
-                if current_section == section:
-                    in_target_section = True
-                    section_found = True
-                else:
-                    in_target_section = False
-                new_lines.append(line)
-                continue
-            
-            # 在目标段落中更新字段
-            if in_target_section and '=' in line and not stripped.startswith('#'):
-                # 提取键名（去除空格）
-                key = line.split('=')[0].strip()
-                if key in updates:
-                    # 保留原有的缩进和格式
-                    indent = len(line) - len(line.lstrip())
-                    new_lines.append(' ' * indent + f"{key} = {updates[key]}")
-                    updated_keys.add(key)
-                else:
-                    new_lines.append(line)
-            else:
-                new_lines.append(line)
-        
-        # 检查段落是否存在
-        if not section_found:
-            print(f"配置文件中未找到段落: [{section}]")
-            return False
-        
-        # 检查是否所有字段都已更新
-        missing_keys = set(updates.keys()) - updated_keys
-        if missing_keys:
-            print(f"警告: 以下字段未找到: {missing_keys}")
-        
-        # 写回文件
-        file_path.write_text('\n'.join(new_lines), encoding="utf-8")
-        return True
-    except Exception as exc:
-        print(f"更新配置文件失败 {file_path}: {exc}")
-        return False
-
-
 
 
 def start_fika(state: "InstallerState") -> None:
@@ -251,7 +47,7 @@ def start_fika(state: "InstallerState") -> None:
     if not fika_installed:
         print("正在准备联机环境...")
         # 静默下载并安装 Fika MOD
-        success = _download_and_install_fika(state, silent=False)
+        success = download_and_install_fika(state, silent=False)
         if not success:
             print("联机功能启动失败。")
             return
@@ -304,7 +100,7 @@ def create_server(state: "InstallerState") -> None:
     
     # 1. 修改 launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
-    if not _update_json_file(launcher_config, {
+    if not update_json_file(launcher_config, {
         "Server.Url": f"https://{public_ip}:6969"
     }):
         print("配置失败。")
@@ -312,7 +108,7 @@ def create_server(state: "InstallerState") -> None:
     
     # 2. 修改 com.fika.core.cfg
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
-    if not _update_cfg_file(fika_cfg, "Network", {
+    if not update_cfg_file(fika_cfg, "Network", {
         "Force IP": public_ip,
         "Force Bind IP": "Disabled"
     }):
@@ -325,7 +121,7 @@ def create_server(state: "InstallerState") -> None:
         print(utils.color_text("错误: 未找到 fika.jsonc 配置文件，请先启动联机。", utils.Colors.RED))
         return
     
-    if not _update_json_file(fika_config, {
+    if not update_json_file(fika_config, {
         "server.SPT.http.ip": "0.0.0.0",
         "server.SPT.http.backendIp": public_ip
     }):
@@ -374,7 +170,7 @@ def join_server(state: "InstallerState") -> None:
     
     # 1. 修改 launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
-    if not _update_json_file(launcher_config, {
+    if not update_json_file(launcher_config, {
         "Server.Url": f"https://{host_ip}:6969"
     }):
         print("配置失败。")
@@ -382,7 +178,7 @@ def join_server(state: "InstallerState") -> None:
     
     # 2. 修改 com.fika.core.cfg
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
-    if not _update_cfg_file(fika_cfg, "Network", {
+    if not update_cfg_file(fika_cfg, "Network", {
         "Force IP": my_ip,
         "Force Bind IP": "Disabled"
     }):
@@ -395,7 +191,7 @@ def join_server(state: "InstallerState") -> None:
         print(utils.color_text("错误: 未找到 fika.jsonc 配置文件，请先启动联机。", utils.Colors.RED))
         return
     
-    if not _update_json_file(fika_config, {
+    if not update_json_file(fika_config, {
         "server.SPT.http.ip": "0.0.0.0",
         "server.SPT.http.backendIp": "0.0.0.0"
     }):
@@ -464,7 +260,7 @@ def close_fika(state: "InstallerState") -> None:
     # 恢复默认配置
     spt_dir = state.spt_dir()
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
-    _update_json_file(launcher_config, {
+    update_json_file(launcher_config, {
         "Server.Url": "https://127.0.0.1:6969"
     })
     
