@@ -16,6 +16,7 @@ from .updater import check_update, auto_update
 from .uninstaller import uninstall_game
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
+from .fika_manager import start_fika, create_server, join_server, close_fika
 
 
 def print_menu(install_path: str | None) -> None:
@@ -60,7 +61,8 @@ def print_other_menu() -> None:
     print(color_text("2) 检查并更新软件", Colors.CYAN))
     print(color_text("3) MOD 管理", Colors.CYAN))
     print(color_text("4) 服务端版本管理", Colors.CYAN))
-    print(color_text("5) 卸载游戏", Colors.CYAN))
+    print(color_text("5) Fika 联机功能", Colors.CYAN))
+    print(color_text("6) 卸载游戏", Colors.CYAN))
     print(color_text("0) 返回主菜单", Colors.RED))
 
 
@@ -79,6 +81,16 @@ def print_server_version_menu() -> None:
     print("\n====== 服务端版本管理 ======")
     print(color_text("1) 下载服务端版本", Colors.CYAN))
     print(color_text("2) 切换服务端版本", Colors.CYAN))
+    print(color_text("0) 返回上级菜单", Colors.RED))
+
+
+def print_fika_menu() -> None:
+    """打印 Fika 联机功能子菜单。"""
+    print("\n====== Fika 联机功能 ======")
+    print(color_text("1) 启动联机", Colors.CYAN))
+    print(color_text("2) 创建服务器（房主模式）", Colors.CYAN))
+    print(color_text("3) 加入服务器（客户端模式）", Colors.CYAN))
+    print(color_text("4) 关闭联机", Colors.CYAN))
     print(color_text("0) 返回上级菜单", Colors.RED))
 
 
@@ -123,6 +135,28 @@ def handle_server_version_menu(state: InstallerState) -> None:
         input("\n按回车键继续...")
 
 
+def handle_fika_menu(state: InstallerState) -> None:
+    """处理 Fika 联机功能子菜单的选择。"""
+    while True:
+        clear_screen()
+        print_fika_menu()
+        choice = input("请选择功能：").strip()
+        if choice == "1":
+            start_fika(state)
+        elif choice == "2":
+            create_server(state)
+        elif choice == "3":
+            join_server(state)
+        elif choice == "4":
+            close_fika(state)
+        elif choice == "0":
+            print("已返回上级菜单。")
+            return
+        else:
+            print("无效选项，请重新输入。")
+        input("\n按回车键继续...")
+
+
 def handle_other_menu(state: InstallerState) -> None:
     """处理"其他"子菜单的选择。"""
     while True:
@@ -138,6 +172,8 @@ def handle_other_menu(state: InstallerState) -> None:
         elif choice == "4":
             handle_server_version_menu(state)
         elif choice == "5":
+            handle_fika_menu(state)
+        elif choice == "6":
             uninstall_game(state)
         elif choice == "0":
             print("已返回主菜单。")
