@@ -1,6 +1,5 @@
 """Fika 联机功能管理模块。"""
 
-import configparser
 import json
 import shutil
 from pathlib import Path
@@ -39,7 +38,7 @@ def _get_fika_mod_from_announcement() -> Optional[ModVersion]:
     return None
 
 
-def _is_fika_installed(install_path: Path) -> bool:
+def is_fika_installed(install_path: Path) -> bool:
     """检查 Fika MOD 是否已安装。"""
     fika_server_dir = install_path / config.TARGET_SUBDIR / "user" / "mods" / "fika-server"
     fika_client_dir = install_path / "BepInEx" / "plugins" / "Fika"
@@ -61,7 +60,7 @@ def _download_and_install_fika(state: "InstallerState", silent: bool = True) -> 
         return False
     
     # 检查是否已安装
-    if _is_fika_installed(install_path):
+    if is_fika_installed(install_path):
         return True
     
     # 获取 Fika MOD 信息
@@ -162,11 +161,11 @@ def _update_json_file(file_path: Path, updates: dict) -> bool:
 
 
 def _update_cfg_file(file_path: Path, section: str, updates: dict) -> bool:
-    """更新 .cfg 配置文件中的指定字段。
+    """更新 .cfg 配置文件中的指定字段（保留注释和格式）。
     
     Args:
         file_path: .cfg 文件路径
-        section: 配置段落名称（如 "[Network]"）
+        section: 配置段落名称（如 "Network"，不包含方括号）
         updates: 要更新的字段字典
     
     Returns:
@@ -177,25 +176,54 @@ def _update_cfg_file(file_path: Path, section: str, updates: dict) -> bool:
             print(f"配置文件不存在: {file_path}")
             return False
         
-        # 使用 configparser 读取配置文件
-        config_parser = configparser.ConfigParser()
-        # 保持键的大小写
-        config_parser.optionxform = str
-        config_parser.read(file_path, encoding="utf-8")
+        # 读取文件内容
+        lines = file_path.read_text(encoding="utf-8").split('\n')
+        new_lines = []
+        in_target_section = False
+        section_found = False
+        updated_keys = set()
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # 检测段落开始
+            if stripped.startswith('[') and stripped.endswith(']'):
+                # 提取段落名称（移除方括号）
+                current_section = stripped[1:-1]
+                if current_section == section:
+                    in_target_section = True
+                    section_found = True
+                else:
+                    in_target_section = False
+                new_lines.append(line)
+                continue
+            
+            # 在目标段落中更新字段
+            if in_target_section and '=' in line and not stripped.startswith('#'):
+                # 提取键名（去除空格）
+                key = line.split('=')[0].strip()
+                if key in updates:
+                    # 保留原有的缩进和格式
+                    indent = len(line) - len(line.lstrip())
+                    new_lines.append(' ' * indent + f"{key} = {updates[key]}")
+                    updated_keys.add(key)
+                else:
+                    new_lines.append(line)
+            else:
+                new_lines.append(line)
         
         # 检查段落是否存在
-        if not config_parser.has_section(section):
-            print(f"配置文件中未找到段落: {section}")
+        if not section_found:
+            print(f"配置文件中未找到段落: [{section}]")
             return False
         
-        # 更新字段
-        for key, value in updates.items():
-            config_parser.set(section, key, str(value))
+        # 检查是否所有字段都已更新
+        missing_keys = set(updates.keys()) - updated_keys
+        if missing_keys:
+            print(f"警告: 以下字段未找到: {missing_keys}")
         
         # 写回文件
-        with open(file_path, 'w', encoding="utf-8") as f:
-            config_parser.write(f, space_around_delimiters=True)
-        
+        file_path.write_text('\n'.join(new_lines), encoding="utf-8")
         return True
     except Exception as exc:
         print(f"更新配置文件失败 {file_path}: {exc}")
@@ -218,7 +246,7 @@ def start_fika(state: "InstallerState") -> None:
     print("\n====== 启动联机 ======")
     
     # 检查是否已安装 Fika
-    fika_installed = _is_fika_installed(install_path)
+    fika_installed = is_fika_installed(install_path)
     
     if not fika_installed:
         print("正在准备联机环境...")
@@ -256,8 +284,8 @@ def create_server(state: "InstallerState") -> None:
         return
     
     # 检查是否已启动联机
-    if not _is_fika_installed(install_path):
-        print(utils.color_text("请先使用'启动联机'功能安装并启用联机MOD后再操作", utils.Colors.RED))
+    if not is_fika_installed(install_path):
+        print(utils.color_text("请先使用'启动联机'功能后再操作", utils.Colors.RED))
         return
     
     print("\n====== 创建服务器 ======")
@@ -271,6 +299,7 @@ def create_server(state: "InstallerState") -> None:
     
     print(f"\n正在配置服务器，公网IP: {public_ip}")
     
+    # 获取 SPT 目录
     spt_dir = state.spt_dir()
     
     # 1. 修改 launcher config.json
@@ -283,7 +312,7 @@ def create_server(state: "InstallerState") -> None:
     
     # 2. 修改 com.fika.core.cfg
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
-    if not _update_cfg_file(fika_cfg, "[Network]", {
+    if not _update_cfg_file(fika_cfg, "Network", {
         "Force IP": public_ip,
         "Force Bind IP": "Disabled"
     }):
@@ -319,7 +348,7 @@ def join_server(state: "InstallerState") -> None:
         return
     
     # 检查是否已启动联机
-    if not _is_fika_installed(install_path):
+    if not is_fika_installed(install_path):
         print(utils.color_text("请先启动联机后再加入服务器", utils.Colors.RED))
         return
     
@@ -340,6 +369,7 @@ def join_server(state: "InstallerState") -> None:
     
     print(f"\n正在配置客户端，房主IP: {host_ip}, 你的IP: {my_ip}")
     
+    # 获取 SPT 目录
     spt_dir = state.spt_dir()
     
     # 1. 修改 launcher config.json
@@ -352,7 +382,7 @@ def join_server(state: "InstallerState") -> None:
     
     # 2. 修改 com.fika.core.cfg
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
-    if not _update_cfg_file(fika_cfg, "[Network]", {
+    if not _update_cfg_file(fika_cfg, "Network", {
         "Force IP": my_ip,
         "Force Bind IP": "Disabled"
     }):
@@ -386,7 +416,7 @@ def close_fika(state: "InstallerState") -> None:
         return
     
     # 检查是否已安装 Fika
-    if not _is_fika_installed(install_path):
+    if not is_fika_installed(install_path):
         print("未检测到联机功能。")
         return
     

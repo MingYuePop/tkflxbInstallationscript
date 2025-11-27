@@ -84,10 +84,22 @@ def print_server_version_menu() -> None:
     print(color_text("0) 返回上级菜单", Colors.RED))
 
 
-def print_fika_menu() -> None:
+def print_fika_menu(state: InstallerState) -> None:
     """打印 Fika 联机功能子菜单。"""
     print("\n====== Fika 联机功能 ======")
-    print(color_text("1) 启动联机", Colors.CYAN))
+    
+    # 检查联机状态
+    from .fika_manager import is_fika_installed
+    if state.install_path:
+        fika_status = is_fika_installed(state.install_path)
+        if fika_status:
+            print(color_text("当前状态: 已启动联机", Colors.GREEN))
+        else:
+            print(color_text("当前状态: 未启动联机", Colors.YELLOW))
+    else:
+        print(color_text("当前状态: 未选择安装路径", Colors.RED))
+    
+    print(color_text("\n1) 启动联机", Colors.CYAN))
     print(color_text("2) 创建服务器（房主模式）", Colors.CYAN))
     print(color_text("3) 加入服务器（客户端模式）", Colors.CYAN))
     print(color_text("4) 关闭联机", Colors.CYAN))
@@ -139,7 +151,7 @@ def handle_fika_menu(state: InstallerState) -> None:
     """处理 Fika 联机功能子菜单的选择。"""
     while True:
         clear_screen()
-        print_fika_menu()
+        print_fika_menu(state)
         choice = input("请选择功能：").strip()
         if choice == "1":
             start_fika(state)

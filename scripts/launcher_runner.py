@@ -54,14 +54,16 @@ def launch_game(state: "InstallerState") -> None:
 
 def launch_client_only(state: "InstallerState") -> None:
     """仅启动客户端（不启动服务端）。"""
+    # 先检查是否已安装 Fika MOD
     install_path = _require_install_path(state)
     if not install_path:
         return
+    # 获取 SPT 目录
     spt_dir = state.spt_dir()
     if not spt_dir or not spt_dir.exists():
         print(f"未找到 {config.TARGET_SUBDIR} 文件夹，请先完成自动安装。")
         return
-
+    # 检查启动器文件
     launcher_exe = spt_dir / "patched_SPT.Launcher.exe"
     if not launcher_exe.exists():
         fallback = spt_dir / "SPT.Launcher.exe"
