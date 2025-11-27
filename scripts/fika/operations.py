@@ -83,6 +83,12 @@ def create_server(state: "InstallerState") -> None:
         print(utils.color_text("请先使用'启动联机'功能后再操作", utils.Colors.RED))
         return
     
+    # 检测并关闭已运行的游戏进程
+    server_running, client_running, game_running = check_spt_processes()
+    if server_running or client_running or game_running:
+        if not close_spt_processes(confirm=True):
+            return
+    
     print("\n====== 创建服务器 ======")
     print("作为房主，其他玩家将连接到你的服务器。")
     
@@ -146,6 +152,12 @@ def join_server(state: "InstallerState") -> None:
     if not is_fika_installed(install_path):
         print(utils.color_text("请先启动联机后再加入服务器", utils.Colors.RED))
         return
+    
+    # 检测并关闭已运行的游戏进程
+    server_running, client_running, game_running = check_spt_processes()
+    if server_running or client_running or game_running:
+        if not close_spt_processes(confirm=True):
+            return
     
     print("\n====== 加入服务器 ======")
     print("作为客户端，你将连接到房主的服务器。")
