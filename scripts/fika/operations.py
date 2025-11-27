@@ -63,8 +63,8 @@ def start_fika(state: "InstallerState") -> None:
     
     if _confirm("\n是否现在退出游戏？"):
         # 检查游戏进程
-        server_running, client_running = check_spt_processes()
-        if server_running or client_running:
+        server_running, client_running, game_running = check_spt_processes()
+        if server_running or client_running or game_running:
             if not close_spt_processes(confirm=True):
                 print("已取消操作。")
                 return
@@ -219,8 +219,8 @@ def close_fika(state: "InstallerState") -> None:
     print("\n====== 关闭联机 ======")
     
     # 检查游戏是否正在运行
-    server_running, client_running = check_spt_processes()
-    if server_running or client_running:
+    server_running, client_running, game_running = check_spt_processes()
+    if server_running or client_running or game_running:
         print(utils.color_text("检测到游戏正在运行。", utils.Colors.YELLOW))
         if _confirm("请先完全关闭游戏后再关闭联机功能，是否现在关闭游戏？"):
             if not close_spt_processes(confirm=False):
