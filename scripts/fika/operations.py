@@ -62,7 +62,7 @@ def start_fika(state: "InstallerState") -> None:
         print(utils.color_text("Fika MOD 已安装。", utils.Colors.GREEN))
     
     print(utils.color_text("\n联机功能已准备就绪。", utils.Colors.GREEN))
-    print(utils.color_text("请先登录游戏一次以完成初始化，然后完全退出游戏。", utils.Colors.YELLOW))
+    print(utils.color_text("请先登录游戏一次以完成初始化，然后完全退出游戏。", utils.Colors.RED))
     print("接下来请选择：")
     print("  - 创建服务器：作为房主，其他玩家连接到你")
     print("  - 加入服务器：作为客户端，连接到房主")

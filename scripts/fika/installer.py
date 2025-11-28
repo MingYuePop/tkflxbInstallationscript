@@ -24,7 +24,8 @@ def is_fika_installed(install_path: Path) -> bool:
     """检查 Fika MOD 是否已安装。"""
     fika_server_dir = install_path / config.TARGET_SUBDIR / "user" / "mods" / "fika-server"
     fika_client_dir = install_path / "BepInEx" / "plugins" / "Fika"
-    return fika_server_dir.exists() and fika_client_dir.exists()
+    fika_config_file = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
+    return fika_server_dir.exists() and fika_client_dir.exists() and fika_config_file.exists()
 
 
 def download_and_install_fika(state: "InstallerState", silent: bool = True) -> bool:

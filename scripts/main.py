@@ -17,6 +17,7 @@ from .uninstaller import uninstall_game
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
 from .fika import start_fika, create_server, join_server, close_fika
+from .profile_manager import export_profile, import_profile
 
 
 def print_menu(install_path: str | None) -> None:
@@ -62,7 +63,8 @@ def print_other_menu() -> None:
     print(color_text("3) MOD 管理", Colors.CYAN))
     print(color_text("4) 服务端版本管理", Colors.CYAN))
     print(color_text("5) Fika 联机功能", Colors.CYAN))
-    print(color_text("6) 卸载游戏", Colors.CYAN))
+    print(color_text("6) 存档管理", Colors.CYAN))
+    print(color_text("7) 卸载游戏", Colors.CYAN))
     print(color_text("0) 返回主菜单", Colors.RED))
 
 
@@ -169,6 +171,32 @@ def handle_fika_menu(state: InstallerState) -> None:
         input("\n按回车键继续...")
 
 
+def print_profile_menu() -> None:
+    """打印存档管理子菜单。"""
+    print("\n====== 存档管理 ======")
+    print(color_text("1) 导出存档", Colors.CYAN))
+    print(color_text("2) 导入存档", Colors.CYAN))
+    print(color_text("0) 返回上级菜单", Colors.RED))
+
+
+def handle_profile_menu(state: InstallerState) -> None:
+    """处理存档管理子菜单的选择。"""
+    while True:
+        clear_screen()
+        print_profile_menu()
+        choice = input("请选择功能：").strip()
+        if choice == "1":
+            export_profile(state)
+        elif choice == "2":
+            import_profile(state)
+        elif choice == "0":
+            print("已返回上级菜单。")
+            return
+        else:
+            print("无效选项，请重新输入。")
+        input("\n按回车键继续...")
+
+
 def handle_other_menu(state: InstallerState) -> None:
     """处理"其他"子菜单的选择。"""
     while True:
@@ -186,6 +214,8 @@ def handle_other_menu(state: InstallerState) -> None:
         elif choice == "5":
             handle_fika_menu(state)
         elif choice == "6":
+            handle_profile_menu(state)
+        elif choice == "7":
             uninstall_game(state)
         elif choice == "0":
             print("已返回主菜单。")
