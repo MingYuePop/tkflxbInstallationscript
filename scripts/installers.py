@@ -2,13 +2,16 @@ import json
 import shutil
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from . import config
 from .config import GameVersion
 from . import utils
 from .dotnet_env import post_install_dotnet_flow
 from .manifest import load_manifest, write_manifest
+
+if TYPE_CHECKING:
+    from .launcher_runner import ServerLogReader
 
 # 记住上一次有效的安装路径
 _PERSIST_FILE = config.RESOURCES_DIR / "config.json"
@@ -55,6 +58,7 @@ class InstallerState:
     def __init__(self) -> None:
         self.install_path: Optional[Path] = _load_saved_install_path()
         self.loaded_from_cache: bool = self.install_path is not None
+        self.server_log_reader: Optional["ServerLogReader"] = None  # 服务端日志读取器
 
     def spt_dir(self) -> Optional[Path]:
         """返回安装路径下的 SPT 子目录。"""

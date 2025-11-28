@@ -86,7 +86,7 @@ def print_server_version_menu() -> None:
 
 def print_fika_menu(state: InstallerState) -> None:
     """打印 Fika 联机功能子菜单。"""
-    print("\n====== Fika 联机功能 ======")
+    print("\n====== Fika 联机功能（测试版） ======")
     
     # 检查联机状态
     from .fika import is_fika_installed

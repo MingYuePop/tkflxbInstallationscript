@@ -1,5 +1,6 @@
 import subprocess
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
@@ -8,6 +9,65 @@ from .process import check_spt_processes, close_spt_processes
 
 if TYPE_CHECKING:
     from .installers import InstallerState
+
+
+@dataclass
+class ServerLogReader:
+    """服务端日志读取器，只读取本次运行新增的日志内容。"""
+    log_file: Path
+    start_position: int = 0
+    
+    @classmethod
+    def create(cls, spt_dir: Path) -> Optional["ServerLogReader"]:
+        """启动服务端前调用，记录当前日志位置。"""
+        log_dir = spt_dir / "user" / "logs" / "spt"
+        if not log_dir.exists():
+            return None
+        
+        # 找最新日志文件
+        log_files = sorted(log_dir.glob("*.log"), key=lambda f: f.stat().st_mtime, reverse=True)
+        if not log_files:
+            return None
+        
+        log_file = log_files[0]
+        start_pos = log_file.stat().st_size  # 记录当前文件大小
+        return ServerLogReader(log_file, start_pos)
+    
+    def read_new_lines(self) -> list[str]:
+        """只读取本次运行新增的日志。"""
+        if not self.log_file.exists():
+            return []
+        
+        with open(self.log_file, "r", encoding="utf-8", errors="ignore") as f:
+            f.seek(self.start_position)
+            return [line.rstrip("\n\r") for line in f.readlines()]
+    
+    def read_new_content(self) -> str:
+        """读取本次运行新增的日志（返回完整字符串）。"""
+        return "\n".join(self.read_new_lines())
+    
+    def contains(self, keyword: str) -> bool:
+        """检查新日志中是否包含指定关键字。"""
+        content = self.read_new_content()
+        return keyword in content
+    
+    def wait_for_keyword(self, keyword: str, timeout: float = 30, interval: float = 0.5) -> bool:
+        """等待日志中出现指定关键字。
+        
+        Args:
+            keyword: 要等待的关键字
+            timeout: 超时时间（秒）
+            interval: 检查间隔（秒）
+        
+        Returns:
+            True 如果找到关键字，False 如果超时
+        """
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if self.contains(keyword):
+                return True
+            time.sleep(interval)
+        return False
 
 
 def _require_install_path(state: "InstallerState") -> Optional[Path]:
@@ -47,12 +107,35 @@ def launch_game(state: "InstallerState") -> None:
             print("缺少 patched_SPT.Launcher.exe，无法启动。")
             return
 
+    # 创建日志读取器，记录启动前的日志位置
+    state.server_log_reader = ServerLogReader.create(spt_dir)
+
     creation_flags = subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, "CREATE_NEW_CONSOLE") else 0
     try:
         subprocess.Popen([str(server_exe)], cwd=spt_dir, creationflags=creation_flags)
-        print("已启动 SPT.Server.exe，等待 6 秒后启动客户端...")
-        time.sleep(6)
-        subprocess.Popen([str(launcher_exe)], cwd=spt_dir, creationflags=creation_flags)
+        print("已启动 SPT.Server.exe，等待服务端就绪...")
+        
+        # 等待服务端启动完成（检测日志关键字）
+        server_ready = False
+        if state.server_log_reader:
+            server_ready = state.server_log_reader.wait_for_keyword(
+                "服务端已开启，游戏愉快", timeout=60, interval=0.5
+            )
+        
+        # 调试：超时时显示读取到的日志内容
+        if not server_ready and state.server_log_reader:
+            new_lines = state.server_log_reader.read_new_lines()
+            if new_lines:
+                for line in new_lines[-10:]:
+                    print(f"  > {line}")
+        
+        if server_ready:
+            print("服务端已就绪，正在启动客户端...")
+            subprocess.Popen([str(launcher_exe)], cwd=spt_dir, creationflags=creation_flags)
+        else:
+            print("等待超时，尝试启动客户端...\n")
+            print("确保环境全部安装")
+        
     except Exception as exc:
         print(f"启动失败: {exc}")
         return
