@@ -20,7 +20,7 @@ from .fika import be_host, join_host, restore_solo, get_fika_status
 from .profile_manager import export_profile, import_profile
 
 
-def print_menu(install_path: str | None) -> None:
+def print_menu(install_path: str | None, fika_status: str = "") -> None:
     """打印主菜单，使用颜色高亮选项。"""
     # ============ 获取并格式化公告 ============
     ann = get_announcement()
@@ -43,28 +43,39 @@ def print_menu(install_path: str | None) -> None:
         )
         print(version_hint)
 
-    # 打印标题
+    # 打印安装路径
     if install_path:
         print(color_text(f"当前安装路径: {install_path}", Colors.GREEN))
     else:
         print(color_text("当前安装路径: 未选择", Colors.YELLOW))
+    
+    # 打印 Fika 联机状态
+    if fika_status:
+        print(color_text(f"联机状态: {fika_status}", Colors.CYAN))
+    
+    # 基础操作
+    print("\n--- 基础操作 ---")
     print(color_text("1) 选择游戏安装路径", Colors.CYAN))
     print(color_text("2) 开始自动安装", Colors.CYAN))
     print(color_text("3) 启动游戏", Colors.CYAN))
-    print(color_text("4) 其他", Colors.CYAN))
-    print(color_text("0) 退出", Colors.RED))
+    
+    # 扩展功能
+    print("\n--- 扩展功能 ---")
+    print(color_text("4) MOD 管理", Colors.CYAN))
+    print(color_text("5) Fika 联机", Colors.CYAN))
+    print(color_text("6) 更多功能", Colors.CYAN))
+    
+    print(color_text("\n0) 退出", Colors.RED))
 
 
-def print_other_menu() -> None:
-    """打印"其他"子菜单。"""
-    print("\n====== 其他功能 ======")
-    print(color_text("1) 安装 .NET 环境", Colors.CYAN))
-    print(color_text("2) 检查并更新软件", Colors.CYAN))
-    print(color_text("3) MOD 管理", Colors.CYAN))
-    print(color_text("4) 服务端版本管理", Colors.CYAN))
-    print(color_text("5) Fika 联机功能", Colors.CYAN))
-    print(color_text("6) 存档管理", Colors.CYAN))
-    print(color_text("7) 卸载游戏", Colors.CYAN))
+def print_more_menu() -> None:
+    """打印"更多功能"子菜单。"""
+    print("\n====== 更多功能 ======")
+    print(color_text("1) 存档管理", Colors.CYAN))
+    print(color_text("2) 服务端版本管理", Colors.CYAN))
+    print(color_text("3) 检查软件更新", Colors.CYAN))
+    print(color_text("4) 安装 .NET 环境", Colors.CYAN))
+    print(color_text("5) 卸载游戏", Colors.CYAN))
     print(color_text("0) 返回主菜单", Colors.RED))
 
 
@@ -199,25 +210,21 @@ def handle_profile_menu(state: InstallerState) -> None:
         input("\n按回车键继续...")
 
 
-def handle_other_menu(state: InstallerState) -> None:
-    """处理"其他"子菜单的选择。"""
+def handle_more_menu(state: InstallerState) -> None:
+    """处理"更多功能"子菜单的选择。"""
     while True:
         clear_screen()
-        print_other_menu()
+        print_more_menu()
         choice = input("请选择功能：").strip()
         if choice == "1":
-            install_dotnet_environment()
-        elif choice == "2":
-            auto_update()
-        elif choice == "3":
-            handle_mod_menu(state)
-        elif choice == "4":
-            handle_server_version_menu(state)
-        elif choice == "5":
-            handle_fika_menu(state)
-        elif choice == "6":
             handle_profile_menu(state)
-        elif choice == "7":
+        elif choice == "2":
+            handle_server_version_menu(state)
+        elif choice == "3":
+            auto_update()
+        elif choice == "4":
+            install_dotnet_environment()
+        elif choice == "5":
             uninstall_game(state)
         elif choice == "0":
             print("已返回主菜单。")
@@ -227,12 +234,26 @@ def handle_other_menu(state: InstallerState) -> None:
         input("\n按回车键继续...")
 
 
+def _get_fika_status_text(state: InstallerState) -> str:
+    """获取 Fika 联机状态文本用于主菜单显示。"""
+    if not state.install_path:
+        return ""
+    is_installed, mode, status_text = get_fika_status(state)
+    if mode == "host":
+        return f"联机模式"
+    elif mode == "client":
+        return f"联机模式"
+    else:
+        return "单机模式"
+
+
 def main() -> None:
     """主循环：展示菜单并根据输入调用对应功能。"""
     state = InstallerState()
     while True:
         clear_screen()
-        print_menu(str(state.install_path) if state.install_path else None)
+        fika_status = _get_fika_status_text(state)
+        print_menu(str(state.install_path) if state.install_path else None, fika_status)
         choice = input("请选择功能：").strip()
         if choice == "1":
             select_install_path(state)
@@ -241,7 +262,11 @@ def main() -> None:
         elif choice == "3":
             launch_game(state)
         elif choice == "4":
-            handle_other_menu(state)
+            handle_mod_menu(state)
+        elif choice == "5":
+            handle_fika_menu(state)
+        elif choice == "6":
+            handle_more_menu(state)
         elif choice == "0":
             print("已退出。")
             sys.exit(0)
