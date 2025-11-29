@@ -104,3 +104,60 @@ def remove_mod_record(target_root: Path, mod_name: str) -> None:
             path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
         pass
+
+
+# ============ Fika 联机配置记忆 ============
+
+def get_fika_config(target_root: Path) -> Optional[dict]:
+    """获取 Fika 联机配置。
+    
+    返回格式:
+    {
+        "mode": "host" | "client" | None,
+        "host_ip": "192.168.1.1",  # 房主的公网IP
+        "my_ip": "192.168.1.2",    # 自己的公网IP（客户端模式）
+    }
+    """
+    manifest = load_manifest(target_root)
+    if not manifest:
+        return None
+    return manifest.get("fika")
+
+
+def save_fika_config(target_root: Path, mode: str, host_ip: str = "", my_ip: str = "") -> None:
+    """保存 Fika 联机配置。
+    
+    Args:
+        target_root: 安装根目录
+        mode: "host" 或 "client"
+        host_ip: 房主的公网IP
+        my_ip: 自己的公网IP（客户端模式需要）
+    """
+    path = manifest_path(target_root)
+    if not path.exists():
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["fika"] = {
+            "mode": mode,
+            "host_ip": host_ip,
+            "my_ip": my_ip,
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+        }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def clear_fika_config(target_root: Path) -> None:
+    """清除 Fika 联机配置（恢复单机模式时调用）。"""
+    path = manifest_path(target_root)
+    if not path.exists():
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if "fika" in payload:
+            del payload["fika"]
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass

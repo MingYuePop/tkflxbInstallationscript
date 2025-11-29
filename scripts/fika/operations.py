@@ -1,12 +1,19 @@
-"""Fika 联机主要操作函数。"""
+"""Fika 联机主要操作函数 - 简化版。
+
+提供一键式联机流程：
+- 我是房主：自动安装 Fika + 配置 + 启动游戏
+- 我要加入：自动安装 Fika + 配置 + 启动客户端
+- 恢复单机：重置配置，可选卸载 Fika
+"""
 
 import shutil
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Tuple, TYPE_CHECKING
 
 from .. import config, utils
 from ..process import check_spt_processes, close_spt_processes
 from ..launcher_runner import launch_game, launch_client_only
+from ..manifest import get_fika_config, save_fika_config, clear_fika_config
 from .config_utils import update_json_file, update_cfg_file
 from .installer import is_fika_installed, download_and_install_fika
 
@@ -28,8 +35,81 @@ def _require_install_path(state: "InstallerState") -> Optional[Path]:
     return state.install_path
 
 
-def start_fika(state: "InstallerState") -> None:
-    """启动联机功能。"""
+def _ensure_fika_installed(state: "InstallerState") -> bool:
+    """确保 Fika 已安装，未安装则自动安装。返回是否成功。"""
+    install_path = state.install_path
+    if is_fika_installed(install_path):
+        return True
+    
+    print("正在准备联机环境...")
+    success = download_and_install_fika(state, silent=False)
+    if success:
+        print(utils.color_text("✓ Fika MOD 安装完成", utils.Colors.GREEN))
+    return success
+
+
+def _close_running_game() -> bool:
+    """检测并关闭运行中的游戏。返回是否可以继续。"""
+    server_running, client_running, game_running = check_spt_processes()
+    if server_running or client_running or game_running:
+        return close_spt_processes(confirm=True)
+    return True
+
+
+def _input_ip_with_memory(prompt: str, last_value: str) -> Optional[str]:
+    """带记忆功能的 IP 输入。返回 None 表示取消。"""
+    if last_value:
+        hint = f"（上次: {last_value}，直接回车使用）"
+        user_input = input(f"{prompt}{hint}：").strip()
+        if not user_input:
+            return last_value
+        return user_input
+    else:
+        user_input = input(f"{prompt}：").strip()
+        if not user_input:
+            print("已取消。")
+            return None
+        return user_input
+
+
+def get_fika_status(state: "InstallerState") -> Tuple[bool, Optional[str], str]:
+    """获取 Fika 状态信息。
+    
+    Returns:
+        (is_installed, mode, status_text)
+        - is_installed: 是否已安装 Fika
+        - mode: "host" | "client" | None
+        - status_text: 状态描述文本
+    """
+    if not state.install_path:
+        return False, None, "未选择安装路径"
+    
+    installed = is_fika_installed(state.install_path)
+    if not installed:
+        return False, None, "未安装联机组件,创建或加入会自动安装"
+    
+    # 读取配置
+    fika_cfg = get_fika_config(state.install_path)
+    if not fika_cfg:
+        return True, None, "已安装，未配置"
+    
+    mode = fika_cfg.get("mode")
+    host_ip = fika_cfg.get("host_ip", "")
+    my_ip = fika_cfg.get("my_ip", "")
+    
+    if mode == "host":
+        return True, "host", f"房主模式 (IP: {host_ip})"
+    elif mode == "client":
+        return True, "client", f"加入模式 (房主: {host_ip} 自己：{my_ip})"
+    else:
+        return True, None, "已安装，未配置"
+
+
+def be_host(state: "InstallerState") -> None:
+    """我是房主 - 一键创建服务器。
+    
+    流程：检查安装 → 输入IP → 配置 → 启动游戏
+    """
     install_path = _require_install_path(state)
     if not install_path:
         return
@@ -39,243 +119,193 @@ def start_fika(state: "InstallerState") -> None:
         print(f"未找到 {config.TARGET_SUBDIR} 文件夹，请先完成自动安装。")
         return
     
-    # 检测并关闭已运行的游戏进程
-    server_running, client_running, game_running = check_spt_processes()
-    if server_running or client_running or game_running:
-        if not close_spt_processes(confirm=True):
-            return
-    
-    print("\n====== 启动联机 ======")
-    
-    # 检查是否已安装 Fika
-    fika_installed = is_fika_installed(install_path)
-    
-    if not fika_installed:
-        print("正在准备联机环境...")
-        # 静默下载并安装 Fika MOD
-        success = download_and_install_fika(state, silent=False)
-        if not success:
-            print("联机功能启动失败。")
-            return
-        print(utils.color_text("\n✓ Fika MOD 已安装完成！", utils.Colors.GREEN))
-    else:
-        print(utils.color_text("Fika MOD 已安装。", utils.Colors.GREEN))
-    
-    print(utils.color_text("\n联机功能已准备就绪。", utils.Colors.GREEN))
-    print(utils.color_text("请先登录游戏一次以完成初始化，然后完全退出游戏。", utils.Colors.RED))
-    print("接下来请选择：")
-    print("  - 创建服务器：作为房主，其他玩家连接到你")
-    print("  - 加入服务器：作为客户端，连接到房主")
-    
-    if _confirm("\n是否现在启动游戏？"):
-        from ..launcher_runner import launch_game
-        launch_game(state)
-
-
-def create_server(state: "InstallerState") -> None:
-    """创建服务器（房主模式）。"""
-    install_path = _require_install_path(state)
-    if not install_path:
+    # 关闭运行中的游戏
+    if not _close_running_game():
         return
     
-    # 检查是否已启动联机
-    if not is_fika_installed(install_path):
-        print(utils.color_text("请先使用'启动联机'功能后再操作", utils.Colors.RED))
+    print("\n" + "=" * 40)
+    print(utils.color_text("  我是房主 - 创建服务器", utils.Colors.CYAN))
+    print("=" * 40)
+    print("其他玩家将连接到你的服务器。\n")
+    
+    # 1. 确保 Fika 已安装
+    if not _ensure_fika_installed(state):
+        print(utils.color_text("联机组件安装失败。", utils.Colors.RED))
         return
     
-    # 检测并关闭已运行的游戏进程
-    server_running, client_running, game_running = check_spt_processes()
-    if server_running or client_running or game_running:
-        if not close_spt_processes(confirm=True):
-            return
+    # 2. 获取上次配置
+    last_cfg = get_fika_config(install_path) or {}
+    last_ip = last_cfg.get("host_ip", "")
     
-    print("\n====== 创建服务器 ======")
-    print("作为房主，其他玩家将连接到你的服务器。")
-    
-    # 输入公网IP
-    public_ip = input("请输入你的公网IP（其他玩家用于连接）：").strip()
+    # 3. 输入公网 IP
+    public_ip = _input_ip_with_memory("请输入你的公网IP", last_ip)
     if not public_ip:
-        print("已取消。")
         return
     
-    print(f"\n正在配置服务器，公网IP: {public_ip}")
+    print(f"\n正在配置服务器...")
     
-    # 获取 SPT 目录
-    spt_dir = state.spt_dir()
-    
-    # 1. 修改 launcher config.json
+    # 4. 配置文件
+    # launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
     if not update_json_file(launcher_config, {
         "Server.Url": f"https://{public_ip}:6969"
     }):
-        print("配置失败。")
+        print(utils.color_text("配置失败。", utils.Colors.RED))
         return
     
-    # 2. 修改 com.fika.core.cfg
+    # com.fika.core.cfg
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
     if not update_cfg_file(fika_cfg, "Network", {
         "Force IP": public_ip,
         "Force Bind IP": "0.0.0.0"
     }):
-        print("配置失败。")
+        print(utils.color_text("配置失败。", utils.Colors.RED))
         return
     
-    # 3. 修改 http.json
+    # http.json
     http_config = spt_dir / "SPT_Data" / "configs" / "http.json"
-    if not http_config.exists():
-        print(utils.color_text("错误: 未找到 http.json 配置文件。", utils.Colors.RED))
-        return
+    if http_config.exists():
+        if not update_json_file(http_config, {
+            "ip": "0.0.0.0",
+            "backendIp": public_ip
+        }):
+            print(utils.color_text("配置失败。", utils.Colors.RED))
+            return
     
-    if not update_json_file(http_config, {
-        "ip": "0.0.0.0",
-        "backendIp": public_ip
-    }):
-        print("配置失败。")
-        return
+    # 5. 保存配置
+    save_fika_config(install_path, mode="host", host_ip=public_ip)
     
     print(utils.color_text("\n✓ 服务器配置完成！", utils.Colors.GREEN))
-    print(utils.color_text(f"\n你的创建者服务器IP是: {public_ip}", utils.Colors.CYAN))
-    print(utils.color_text("其他人加入时请提供此IP", utils.Colors.YELLOW))
+    print(utils.color_text(f"\n你的服务器IP: {public_ip}", utils.Colors.CYAN))
+    print(utils.color_text("请将此IP告诉要加入的玩家", utils.Colors.YELLOW))
     
-    # 启动游戏
+    # 6. 启动游戏
     if _confirm("\n是否现在启动游戏？"):
         launch_game(state)
 
 
-def join_server(state: "InstallerState") -> None:
-    """加入服务器（客户端模式）。"""
+def join_host(state: "InstallerState") -> None:
+    """我要加入 - 一键连接房主服务器。
+    
+    流程：检查安装 → 输入房主IP → 输入自己IP → 配置 → 启动客户端
+    """
     install_path = _require_install_path(state)
     if not install_path:
         return
     
-    # 检查是否已启动联机
-    if not is_fika_installed(install_path):
-        print(utils.color_text("请先启动联机后再加入服务器", utils.Colors.RED))
-        return
-    
-    # 检测并关闭已运行的游戏进程
-    server_running, client_running, game_running = check_spt_processes()
-    if server_running or client_running or game_running:
-        if not close_spt_processes(confirm=True):
-            return
-    
-    print("\n====== 加入服务器 ======")
-    print("作为客户端，你将连接到房主的服务器。")
-    
-    # 输入房主IP
-    host_ip = input("请输入创建者的服务器IP（房主公网IP）：").strip()
-    if not host_ip:
-        print("已取消。")
-        return
-    
-    # 输入自己的IP
-    my_ip = input("请输入你自己的公网IP（用于Force IP）：").strip()
-    if not my_ip:
-        print("已取消。")
-        return
-    
-    print(f"\n正在配置客户端，房主IP: {host_ip}, 你的IP: {my_ip}")
-    
-    # 获取 SPT 目录
     spt_dir = state.spt_dir()
+    if not spt_dir or not spt_dir.exists():
+        print(f"未找到 {config.TARGET_SUBDIR} 文件夹，请先完成自动安装。")
+        return
     
-    # 1. 修改 launcher config.json
+    # 关闭运行中的游戏
+    if not _close_running_game():
+        return
+    
+    print("\n" + "=" * 40)
+    print(utils.color_text("  我要加入 - 连接房主", utils.Colors.CYAN))
+    print("=" * 40)
+    print("你将作为客户端连接到房主的服务器。\n")
+    
+    # 1. 确保 Fika 已安装
+    if not _ensure_fika_installed(state):
+        print(utils.color_text("联机组件安装失败。", utils.Colors.RED))
+        return
+    
+    # 2. 获取上次配置
+    last_cfg = get_fika_config(install_path) or {}
+    last_host_ip = last_cfg.get("host_ip", "")
+    last_my_ip = last_cfg.get("my_ip", "")
+    
+    # 3. 输入房主 IP
+    host_ip = _input_ip_with_memory("请输入房主的服务器IP", last_host_ip)
+    if not host_ip:
+        return
+    
+    # 4. 输入自己的 IP
+    my_ip = _input_ip_with_memory("请输入你自己的公网IP", last_my_ip)
+    if not my_ip:
+        return
+    
+    print(f"\n正在配置客户端...")
+    
+    # 5. 配置文件
+    # launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
     if not update_json_file(launcher_config, {
         "Server.Url": f"https://{host_ip}:6969"
     }):
-        print("配置失败。")
+        print(utils.color_text("配置失败。", utils.Colors.RED))
         return
     
-    # 2. 修改 com.fika.core.cfg
+    # com.fika.core.cfg
     fika_cfg = install_path / "BepInEx" / "config" / "com.fika.core.cfg"
     if not update_cfg_file(fika_cfg, "Network", {
         "Force IP": my_ip,
         "Force Bind IP": "0.0.0.0"
     }):
-        print("配置失败。")
+        print(utils.color_text("配置失败。", utils.Colors.RED))
         return
     
-    # 3. 修改 http.json
+    # http.json
     http_config = spt_dir / "SPT_Data" / "configs" / "http.json"
-    if not http_config.exists():
-        print(utils.color_text("错误: 未找到 http.json 配置文件。", utils.Colors.RED))
-        return
+    if http_config.exists():
+        if not update_json_file(http_config, {
+            "ip": "0.0.0.0",
+            "backendIp": "0.0.0.0"
+        }):
+            print(utils.color_text("配置失败。", utils.Colors.RED))
+            return
     
-    if not update_json_file(http_config, {
-        "ip": "0.0.0.0",
-        "backendIp": "0.0.0.0"
-    }):
-        print("配置失败。")
-        return
+    # 6. 保存配置
+    save_fika_config(install_path, mode="client", host_ip=host_ip, my_ip=my_ip)
     
     print(utils.color_text("\n✓ 客户端配置完成！", utils.Colors.GREEN))
     
-    # 仅启动客户端
+    # 7. 启动客户端
     if _confirm("\n是否现在启动游戏？"):
         launch_client_only(state)
 
 
-def close_fika(state: "InstallerState") -> None:
-    """关闭联机功能。"""
+def restore_solo(state: "InstallerState") -> None:
+    """恢复单机模式。
+    
+    重置配置为本地模式，可选择是否卸载 Fika。
+    """
     install_path = _require_install_path(state)
     if not install_path:
         return
     
-    # 检查是否已安装 Fika
-    if not is_fika_installed(install_path):
-        print("未检测到联机功能。")
+    spt_dir = state.spt_dir()
+    if not spt_dir or not spt_dir.exists():
+        print("未找到游戏安装。")
         return
     
-    print("\n====== 关闭联机 ======")
+    print("\n" + "=" * 40)
+    print(utils.color_text("  恢复单机模式", utils.Colors.CYAN))
+    print("=" * 40)
     
-    # 检查游戏是否正在运行
+    # 检查游戏是否运行
     server_running, client_running, game_running = check_spt_processes()
     if server_running or client_running or game_running:
         print(utils.color_text("检测到游戏正在运行。", utils.Colors.YELLOW))
-        if _confirm("请先完全关闭游戏后再关闭联机功能，是否现在关闭游戏？"):
+        if _confirm("需要先关闭游戏，是否现在关闭？"):
             if not close_spt_processes(confirm=False):
                 print("游戏关闭失败，请手动关闭后重试。")
                 return
-            print("游戏已关闭。")
         else:
-            print("请手动关闭游戏后重试。")
             return
     
-    if not _confirm("确认关闭联机功能并移除所有联机组件吗？"):
-        print("已取消。")
-        return
+    # 恢复配置
+    print("\n正在恢复单机配置...")
     
-    # 删除联机相关文件夹
-    fika_server_dir = install_path / config.TARGET_SUBDIR / "user" / "mods" / "fika-server"
-    fika_client_dir = install_path / "BepInEx" / "plugins" / "Fika"
-    
-    deleted_count = 0
-    
-    if fika_server_dir.exists():
-        try:
-            shutil.rmtree(fika_server_dir)
-            print(f"已删除: {fika_server_dir}")
-            deleted_count += 1
-        except Exception as exc:
-            print(f"删除失败 {fika_server_dir}: {exc}")
-    
-    if fika_client_dir.exists():
-        try:
-            shutil.rmtree(fika_client_dir)
-            print(f"已删除: {fika_client_dir}")
-            deleted_count += 1
-        except Exception as exc:
-            print(f"删除失败 {fika_client_dir}: {exc}")
-    
-    # 恢复默认配置
-    spt_dir = state.spt_dir()
+    # launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
     update_json_file(launcher_config, {
         "Server.Url": "https://127.0.0.1:6969"
     })
     
-    # 恢复 http.json 默认配置
+    # http.json
     http_config = spt_dir / "SPT_Data" / "configs" / "http.json"
     if http_config.exists():
         update_json_file(http_config, {
@@ -283,6 +313,52 @@ def close_fika(state: "InstallerState") -> None:
             "backendIp": "127.0.0.1"
         })
     
-    print(utils.color_text("\n联机功能已关闭，所有联机组件已移除。", utils.Colors.GREEN))
-    if deleted_count > 0:
-        print(f"已删除 {deleted_count} 个联机组件。")
+    # 清除 Fika 配置记录
+    clear_fika_config(install_path)
+    
+    print(utils.color_text("✓ 已恢复单机配置", utils.Colors.GREEN))
+    
+    # 询问是否卸载 Fika
+    if is_fika_installed(install_path):
+        print("\n检测到已安装的联机组件。")
+        if _confirm("是否同时卸载联机组件？（保留则下次可快速联机）"):
+            _uninstall_fika_files(install_path)
+            print(utils.color_text("✓ 联机组件已卸载", utils.Colors.GREEN))
+        else:
+            print("已保留联机组件。")
+
+
+def _uninstall_fika_files(install_path: Path) -> None:
+    """卸载 Fika 相关文件。"""
+    fika_server_dir = install_path / config.TARGET_SUBDIR / "user" / "mods" / "fika-server"
+    fika_client_dir = install_path / "BepInEx" / "plugins" / "Fika"
+    
+    for fika_dir in [fika_server_dir, fika_client_dir]:
+        if fika_dir.exists():
+            try:
+                shutil.rmtree(fika_dir)
+            except Exception as exc:
+                print(f"删除失败 {fika_dir}: {exc}")
+
+
+# ============ 兼容旧接口 ============
+# 保留旧函数名以兼容现有代码
+
+def start_fika(state: "InstallerState") -> None:
+    """[已废弃] 请使用 be_host() 或 join_host()"""
+    print(utils.color_text("提示：此功能已整合到'我是房主'和'我要加入'选项中。", utils.Colors.YELLOW))
+
+
+def create_server(state: "InstallerState") -> None:
+    """[已废弃] 请使用 be_host()"""
+    be_host(state)
+
+
+def join_server(state: "InstallerState") -> None:
+    """[已废弃] 请使用 join_host()"""
+    join_host(state)
+
+
+def close_fika(state: "InstallerState") -> None:
+    """[已废弃] 请使用 restore_solo()"""
+    restore_solo(state)

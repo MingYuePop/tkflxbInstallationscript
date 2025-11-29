@@ -16,7 +16,7 @@ from .updater import check_update, auto_update
 from .uninstaller import uninstall_game
 from .utils import Colors, clear_screen, color_text
 from .announcement import get_announcement
-from .fika import start_fika, create_server, join_server, close_fika
+from .fika import be_host, join_host, restore_solo, get_fika_status
 from .profile_manager import export_profile, import_profile
 
 
@@ -88,23 +88,27 @@ def print_server_version_menu() -> None:
 
 def print_fika_menu(state: InstallerState) -> None:
     """打印 Fika 联机功能子菜单。"""
-    print("\n====== Fika 联机功能（测试版） ======")
+    print("\n" + "=" * 40)
+    print(color_text("  Fika 联机功能", Colors.CYAN))
+    print("=" * 40)
     
-    # 检查联机状态
-    from .fika import is_fika_installed
-    if state.install_path:
-        fika_status = is_fika_installed(state.install_path)
-        if fika_status:
-            print(color_text("当前状态: 已启动联机", Colors.GREEN))
-        else:
-            print(color_text("当前状态: 未启动联机", Colors.YELLOW))
+    # 获取状态
+    is_installed, mode, status_text = get_fika_status(state)
+    
+    # 状态显示
+    if mode == "host":
+        print(color_text(f"当前状态: {status_text}", Colors.GREEN))
+    elif mode == "client":
+        print(color_text(f"当前状态: {status_text}", Colors.CYAN))
+    elif is_installed:
+        print(color_text(f"当前状态: {status_text}", Colors.YELLOW))
     else:
-        print(color_text("当前状态: 未选择安装路径", Colors.RED))
+        print(color_text(f"当前状态: {status_text}", Colors.YELLOW))
     
-    print(color_text("\n1) 启动联机", Colors.CYAN))
-    print(color_text("2) 创建服务器（房主模式）", Colors.CYAN))
-    print(color_text("3) 加入服务器（客户端模式）", Colors.CYAN))
-    print(color_text("4) 关闭联机", Colors.CYAN))
+    print()
+    print(color_text("1) 我是房主（创建服务器）", Colors.CYAN))
+    print(color_text("2) 我要加入（连接房主）", Colors.CYAN))
+    print(color_text("3) 恢复单机模式", Colors.CYAN))
     print(color_text("0) 返回上级菜单", Colors.RED))
 
 
@@ -156,13 +160,11 @@ def handle_fika_menu(state: InstallerState) -> None:
         print_fika_menu(state)
         choice = input("请选择功能：").strip()
         if choice == "1":
-            start_fika(state)
+            be_host(state)
         elif choice == "2":
-            create_server(state)
+            join_host(state)
         elif choice == "3":
-            join_server(state)
-        elif choice == "4":
-            close_fika(state)
+            restore_solo(state)
         elif choice == "0":
             print("已返回上级菜单。")
             return
