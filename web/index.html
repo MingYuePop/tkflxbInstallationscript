@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>逃离塔科夫离线版</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #d4af37;
+            --accent-hover: #f0c43d;
+            --danger: #cf6679;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .warning-box {
+            background-color: rgba(207, 102, 121, 0.15);
+            border-left: 4px solid var(--danger);
+            padding: 15px 20px;
+            margin-bottom: 40px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .warning-box i {
+            color: var(--danger);
+            font-size: 1.5rem;
+        }
+
+        .section-title {
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #333;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: #121212;
+            padding: 8px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .download-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .tag {
+            background-color: #333;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-biohazard"></i> 逃离塔科夫离线版</h1>
+            <p class="subtitle">专注于提供高质量的离线版游戏体验与资源</p>
+        </header>
+
+        <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>重要提示：</strong>
+                如果您拥有正版游戏，请不要同时运行离线版和正版，以免发生封号。
+            </div>
+        </div>
+
+        <div class="section-title">工具</div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-file-archive"></i> 7-Zip 解压工具</h3>
+                <a href="https://www.7-zip.org/a/7z2501-x64.exe" class="btn" target="_blank"><i
+                        class="fas fa-download"></i> 点击下载</a>
+            </div>
+            <p>本站资源多为压缩包格式，请务必先下载并安装此工具进行解压，以避免文件损坏。</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-network-wired"></i> Radmin VPN</h3>
+                <a href="https://wwawg.lanzoue.com/b00jevhe1i" class="btn" target="_blank"><i
+                        class="fas fa-download"></i> 点击下载</a>
+            </div>
+            <p>用于离线版联机的虚拟局域网工具，不联机请勿下载。</p>
+            <div class="download-meta"><i class="fas fa-key"></i> 提取密码：<strong>6666</strong></div>
+        </div>
+
+        <div class="section-title">一键安装器 1.4上传中</div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-rocket"></i> 离线版一键安装器 <span class="tag">v1.4</span></h3>
+                <a href="https://www.123865.com/s/ERLuVv-aJi3H" class="btn" target="_blank"><i
+                        class="fas fa-cloud-download-alt"></i> 123云盘下载</a>
+            </div>
+            <p>集成了服务端、客户端及常用插件的自动化安装程序。傻瓜式操作，一键配置游戏环境。</p>
+            <div class="download-meta"><i class="fas fa-info-circle"></i> 状态：上传中</div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 逃离塔科夫离线版社区</p>
+        </footer>
+    </div>
+</body>
+
+</html>

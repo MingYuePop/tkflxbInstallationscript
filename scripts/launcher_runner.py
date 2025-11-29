@@ -132,14 +132,19 @@ def launch_game(state: "InstallerState") -> None:
         if server_ready:
             print("服务端已就绪，正在启动客户端...")
             subprocess.Popen([str(launcher_exe)], cwd=spt_dir, creationflags=creation_flags)
+            print("客户端已启动。")
         else:
-            print("等待超时，尝试启动客户端...\n")
-            print("确保环境全部安装")
+            print("等待超时，未检测到服务端就绪信号。")
+            print("（首次启动可能尚未生成文件，请尝试下方手动启动）\n")
+            choice = input("是否手动启动客户端？(y/n): ").strip().lower()
+            if choice == "y":
+                subprocess.Popen([str(launcher_exe)], cwd=spt_dir, creationflags=creation_flags)
+                print("客户端已启动。")
+            else:
+                print("已取消启动客户端。")
         
     except Exception as exc:
         print(f"启动失败: {exc}")
-        return
-    print("客户端已启动。")
 
 
 def launch_client_only(state: "InstallerState") -> None:
