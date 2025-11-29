@@ -100,7 +100,7 @@ def print_server_version_menu() -> None:
 def print_fika_menu(state: InstallerState) -> None:
     """打印 Fika 联机功能子菜单。"""
     print("\n" + "=" * 40)
-    print(color_text("  Fika 联机功能", Colors.CYAN))
+    print(color_text("Fika 联机功能", Colors.CYAN))
     print("=" * 40)
     
     # 获取状态

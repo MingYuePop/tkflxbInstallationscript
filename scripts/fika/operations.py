@@ -72,6 +72,41 @@ def _input_ip_with_memory(prompt: str, last_value: str) -> Optional[str]:
         return user_input
 
 
+def _check_fika_cfg_initialized(state: "InstallerState") -> bool:
+    """检测 Fika 配置文件是否已初始化。
+    
+    Fika 需要用户登录游戏一次才会生成 com.fika.core.cfg 文件。
+    如果文件不存在，提示用户先登录游戏完成初始化。
+    
+    Returns:
+        True 如果文件存在或用户选择继续，False 如果用户取消
+    """
+    fika_cfg = state.install_path / "BepInEx" / "config" / "com.fika.core.cfg"
+    
+    if fika_cfg.exists():
+        return True
+    
+    # 文件不存在，提示用户
+    print(utils.color_text("\n⚠ 未检测到 Fika 配置文件", utils.Colors.YELLOW))
+    print("Fika 需要先登录游戏一次才能生成配置文件。")
+    print("请启动游戏，登录到角色选择界面，然后退出游戏再来配置联机。\n")
+    
+    print("请选择操作：")
+    print("  1) 启动游戏进行初始化")
+    print("  0) 返回上级菜单")
+    
+    choice = input("\n请选择: ").strip()
+    
+    if choice == "1":
+        print("\n启动游戏中，请登录到角色选择界面后退出游戏...")
+        launch_game(state)
+        print(utils.color_text("\n完成初始化后，请重新选择 '创建服务器' 或 '加入服务器'。", utils.Colors.CYAN))
+        return False
+    else:
+        print("已取消。")
+        return False
+
+
 def get_fika_status(state: "InstallerState") -> Tuple[bool, Optional[str], str]:
     """获取 Fika 状态信息。
     
@@ -133,22 +168,27 @@ def be_host(state: "InstallerState") -> None:
         print(utils.color_text("联机组件安装失败。", utils.Colors.RED))
         return
     
-    # 2. 获取上次配置
+    # 2. 检测 Fika 配置文件是否已初始化
+    if not _check_fika_cfg_initialized(state):
+        return
+    
+    # 3. 获取上次配置
     last_cfg = get_fika_config(install_path) or {}
     last_ip = last_cfg.get("host_ip", "")
     
-    # 3. 输入公网 IP
+    # 4. 输入公网 IP
     public_ip = _input_ip_with_memory("请输入你的公网IP", last_ip)
     if not public_ip:
         return
     
     print(f"\n正在配置服务器...")
     
-    # 4. 配置文件
+    # 5. 配置文件
     # launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
     if not update_json_file(launcher_config, {
-        "Server.Url": f"https://{public_ip}:6969"
+        "IsDevMode": "true",
+        "Server.Url": f"https://127.0.0.1:6969"
     }):
         print(utils.color_text("配置失败。", utils.Colors.RED))
         return
@@ -172,14 +212,14 @@ def be_host(state: "InstallerState") -> None:
             print(utils.color_text("配置失败。", utils.Colors.RED))
             return
     
-    # 5. 保存配置
+    # 6. 保存配置
     save_fika_config(install_path, mode="host", host_ip=public_ip)
     
     print(utils.color_text("\n✓ 服务器配置完成！", utils.Colors.GREEN))
     print(utils.color_text(f"\n你的服务器IP: {public_ip}", utils.Colors.CYAN))
     print(utils.color_text("请将此IP告诉要加入的玩家", utils.Colors.YELLOW))
     
-    # 6. 启动游戏
+    # 7. 启动游戏
     if _confirm("\n是否现在启动游戏？"):
         launch_game(state)
 
@@ -212,27 +252,32 @@ def join_host(state: "InstallerState") -> None:
         print(utils.color_text("联机组件安装失败。", utils.Colors.RED))
         return
     
-    # 2. 获取上次配置
+    # 2. 检测 Fika 配置文件是否已初始化
+    if not _check_fika_cfg_initialized(state):
+        return
+    
+    # 3. 获取上次配置
     last_cfg = get_fika_config(install_path) or {}
     last_host_ip = last_cfg.get("host_ip", "")
     last_my_ip = last_cfg.get("my_ip", "")
     
-    # 3. 输入房主 IP
+    # 4. 输入房主 IP
     host_ip = _input_ip_with_memory("请输入房主的服务器IP", last_host_ip)
     if not host_ip:
         return
     
-    # 4. 输入自己的 IP
+    # 5. 输入自己的 IP
     my_ip = _input_ip_with_memory("请输入你自己的公网IP", last_my_ip)
     if not my_ip:
         return
     
     print(f"\n正在配置客户端...")
     
-    # 5. 配置文件
+    # 6. 配置文件
     # launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
     if not update_json_file(launcher_config, {
+        "IsDevMode": "true",
         "Server.Url": f"https://{host_ip}:6969"
     }):
         print(utils.color_text("配置失败。", utils.Colors.RED))
@@ -257,12 +302,12 @@ def join_host(state: "InstallerState") -> None:
             print(utils.color_text("配置失败。", utils.Colors.RED))
             return
     
-    # 6. 保存配置
+    # 7. 保存配置
     save_fika_config(install_path, mode="client", host_ip=host_ip, my_ip=my_ip)
     
     print(utils.color_text("\n✓ 客户端配置完成！", utils.Colors.GREEN))
     
-    # 7. 启动客户端
+    # 8. 启动客户端
     if _confirm("\n是否现在启动游戏？"):
         launch_client_only(state)
 
@@ -302,6 +347,7 @@ def restore_solo(state: "InstallerState") -> None:
     # launcher config.json
     launcher_config = spt_dir / "user" / "launcher" / "config.json"
     update_json_file(launcher_config, {
+        "IsDevMode": "true",
         "Server.Url": "https://127.0.0.1:6969"
     })
     
