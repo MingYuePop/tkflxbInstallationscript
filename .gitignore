@@ -10,3 +10,5 @@ resources/
 /__tmp_install
 *.spec
 *.pyc
+/launcher.dist
+nuitka-crash-report.xml

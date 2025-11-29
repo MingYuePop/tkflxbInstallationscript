@@ -5,9 +5,26 @@ import sys
 
 # 路径配置：以仓库根目录为基础，便于在任何位置运行。
 
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+def _is_compiled() -> bool:
+    """检测程序是否被打包（支持 PyInstaller 和 Nuitka）"""
+    # PyInstaller 设置 sys.frozen
+    if getattr(sys, 'frozen', False):
+        return True
+    # Nuitka 编译后 __compiled__ 存在于 builtins 或 __main__ 模块
+    try:
+        import __main__
+        if hasattr(__main__, "__compiled__"):
+            return True
+    except Exception:
+        pass
+    # 备用检测：Nuitka 编译后 sys.executable 指向 .exe 文件
+    if sys.executable.endswith(".exe") and not "python" in sys.executable.lower():
+        return True
+    return False
+
+if _is_compiled():
     # -----------------------------------------------------------------
-    # 程序被 PyInstaller 打包了 (运行 .exe)
+    # 程序被打包了 (PyInstaller 或 Nuitka)
     # sys.executable 指向 .exe 文件本身
     # 我们需要 .exe 文件所在的 *目录*
     # -----------------------------------------------------------------

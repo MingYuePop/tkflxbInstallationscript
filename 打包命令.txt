@@ -1,2 +1,7 @@
 pyinstaller --onedir --console --name SPTInstaller --add-data "resources;." launcher.py
 pyinstaller --onefile --console --name SPT-Installer-1.2 launcher.py
+C:\Users\15970\AppData\Local\Programs\Python\Python312\python.exe -m nuitka --standalone --onefile --windows-console-mode=force --output-filename=SPT-Installer-1.4.exe launcher.py
+C:/Users/15970/AppData/Local/Programs/Python/Python312/python.exe -m nuitka --standalone --onefile --windows-console-mode=force --output-filename=SPT-Installer-1.4.exe launcher.py
+C:/Users/15970/AppData/Local/Programs/Python/Python312/python.exe -m nuitka --standalone --onefile --windows-console-mode=force --mingw64 --enable-plugin=tk-inter --output-filename=SPT-Installer-1.4.exe launcher.py
+C:/Users/15970/AppData/Local/Programs/Python/Python312/python.exe -m nuitka --standalone --onefile --output-filename=SPT-Installer-1.4.exe --windows-console-mode=force launcher.py
+C:/Users/15970/AppData/Local/Programs/Python/Python312/python.exe -m nuitka --standalone --onefile --output-filename=SPT-Installer-1.4.exe --windows-console-mode=force --enable-plugin=tk-inter --mingw64 launcher.py
