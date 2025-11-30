@@ -88,7 +88,7 @@ def _check_fika_cfg_initialized(state: "InstallerState") -> bool:
     
     # 文件不存在，提示用户
     print(utils.color_text("\n⚠ 未检测到 Fika 配置文件", utils.Colors.YELLOW))
-    print("Fika 需要先登录游戏一次才能生成配置文件。")
+    print("Fika 需要先登录游戏一次才能生成初始化配置文件。")
     print("请启动游戏，登录到角色选择界面，然后退出游戏再来配置联机。\n")
     
     print("请选择操作：")
