@@ -49,7 +49,7 @@ MANIFEST_FILE = ".spt_installed.json"
 # 在线公告 URL
 ANNOUNCEMENT_URL = "https://gitee.com/ripang/tkflxbInstallationscript/raw/main/announcement.json"
 # 软件版本（安装器程序本身的版本）
-SOFTWARE_VERSION = "1.4"
+SOFTWARE_VERSION = "1.5"
 
 
 @dataclass(frozen=True)

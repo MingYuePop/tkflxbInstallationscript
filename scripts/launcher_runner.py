@@ -2,7 +2,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Union, TYPE_CHECKING
 
 from . import config
 from .process import check_spt_processes, close_spt_processes
@@ -46,25 +46,28 @@ class ServerLogReader:
         """读取本次运行新增的日志（返回完整字符串）。"""
         return "\n".join(self.read_new_lines())
     
-    def contains(self, keyword: str) -> bool:
-        """检查新日志中是否包含指定关键字。"""
+    def contains(self, keywords: Union[str, list[str]]) -> bool:
+        """检查新日志中是否包含指定关键字（任一匹配即可）。"""
         content = self.read_new_content()
-        return keyword in content
+        if isinstance(keywords, str):
+            # 把检查编程字符串转换为列表
+            keywords = [keywords]
+        return any(kw in content for kw in keywords)
     
-    def wait_for_keyword(self, keyword: str, timeout: float = 30, interval: float = 0.5) -> bool:
-        """等待日志中出现指定关键字。
+    def wait_for_keyword(self, keywords: Union[str, list[str]], timeout: float = 30, interval: float = 0.5) -> bool:
+        """等待日志中出现指定关键字（任一匹配即可）。
         
         Args:
-            keyword: 要等待的关键字
+            keywords: 要等待的关键字，可以是单个字符串或字符串列表
             timeout: 超时时间（秒）
             interval: 检查间隔（秒）
         
         Returns:
-            True 如果找到关键字，False 如果超时
+            True 如果找到任一关键字，False 如果超时
         """
         start_time = time.time()
         while time.time() - start_time < timeout:
-            if self.contains(keyword):
+            if self.contains(keywords):
                 return True
             time.sleep(interval)
         return False
@@ -119,7 +122,8 @@ def launch_game(state: "InstallerState") -> None:
         server_ready = False
         if state.server_log_reader:
             server_ready = state.server_log_reader.wait_for_keyword(
-                "服务端已开启，游戏愉快", timeout=60, interval=0.5
+                ["服务端已开启，游戏愉快", "Server has started, happy playing"],
+                timeout=60, interval=0.5
             )
         
         # 调试：超时时显示读取到的日志内容
