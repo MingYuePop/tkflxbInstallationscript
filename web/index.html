@@ -4,243 +4,785 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>逃离塔科夫离线版</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --accent: #d4af37;
-            --accent-hover: #f0c43d;
-            --danger: #cf6679;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        .warning-box {
-            background-color: rgba(207, 102, 121, 0.15);
-            border-left: 4px solid var(--danger);
-            padding: 15px 20px;
-            margin-bottom: 40px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .warning-box i {
-            color: var(--danger);
-            font-size: 1.5rem;
-        }
-
-        .section-title {
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-top: 40px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 20px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border: 1px solid #333;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            border-color: var(--accent);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-main);
-        }
-
-        .btn {
-            display: inline-block;
-            background-color: var(--accent);
-            color: #121212;
-            padding: 8px 20px;
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
-            transition: background-color 0.2s;
-            font-size: 0.95rem;
-        }
-
-        .btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .download-meta {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 60px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            border-top: 1px solid #333;
-            padding-top: 20px;
-        }
-
-        .tag {
-            background-color: #333;
-            color: #fff;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            .card-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .btn {
-                width: 100%;
-                text-align: center;
-                box-sizing: border-box;
-            }
-        }
-    </style>
+    <title>SPT 自动安装器</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-biohazard"></i> 逃离塔科夫离线版</h1>
-            <p class="subtitle">专注于提供高质量的离线版游戏体验与资源</p>
-        </header>
-
-        <div class="warning-box">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div>
-                <strong>重要提示：</strong>
-                如果您拥有正版游戏，请不要同时运行离线版和正版，以免发生封号。
+    <div class="app-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                    </svg>
+                    <span class="logo-text">SPT 安装器</span>
+                </div>
+                <span class="version-badge">v1.0.0</span>
             </div>
-        </div>
 
-        <div class="section-title">工具</div>
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <span class="nav-section-title">基础操作</span>
+                    <a href="#" class="nav-item active" data-page="home">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                        <span>主页</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="install">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span>安装游戏</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="launch">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        <span>启动游戏</span>
+                    </a>
+                </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-file-archive"></i> 7-Zip 解压工具</h3>
-                <a href="https://www.7-zip.org/a/7z2501-x64.exe" class="btn" target="_blank"><i
-                        class="fas fa-download"></i> 点击下载</a>
-            </div>
-            <p>本站资源多为压缩包格式，请务必先下载并安装此工具进行解压，以避免文件损坏。</p>
-        </div>
+                <div class="nav-section">
+                    <span class="nav-section-title">扩展功能</span>
+                    <a href="#" class="nav-item" data-page="mods">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                        <span>MOD 管理</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="fika">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <span>Fika 联机</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="profiles">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        <span>存档管理</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="server">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                            <line x1="6" y1="6" x2="6.01" y2="6" />
+                            <line x1="6" y1="18" x2="6.01" y2="18" />
+                        </svg>
+                        <span>服务端版本</span>
+                    </a>
+                </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-network-wired"></i> Radmin VPN</h3>
-                <a href="https://wwawg.lanzoue.com/b00jevhe1i" class="btn" target="_blank"><i
-                        class="fas fa-download"></i> 点击下载</a>
-            </div>
-            <p>用于离线版联机的虚拟局域网工具，不联机请勿下载。</p>
-            <div class="download-meta"><i class="fas fa-key"></i> 提取密码：<strong>6666</strong></div>
-        </div>
+                <div class="nav-section">
+                    <span class="nav-section-title">系统</span>
+                    <a href="#" class="nav-item" data-page="settings">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                        <span>设置</span>
+                    </a>
+                </div>
+            </nav>
 
-        <div class="section-title">一键安装器 1.4</div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-rocket"></i> 离线版一键安装器 <span class="tag">v1.4</span></h3>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="https://www.123865.com/s/ERLuVv-aJi3H" class="btn" target="_blank"><i
-                            class="fas fa-cloud-download-alt"></i> 123云盘</a>
-                    <a href="https://pan.baidu.com/s/1Zx-Y_PxgeUPtHUiSPJE0-w?pwd=6666" class="btn" target="_blank"><i
-                            class="fas fa-cloud-download-alt"></i> 百度网盘</a>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">单机模式</span>
                 </div>
             </div>
-            <p>集成了服务端、客户端及常用插件的自动化安装程序。傻瓜式操作，一键配置游戏环境。</p>
-            <div class="download-meta"><i class="fas fa-key"></i> 提取密码：<strong>6666</strong></div>
-        </div>
+        </aside>
 
-        <div class="section-title">Mod 资源</div>
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <header class="top-bar">
+                <div class="path-display">
+                    <svg class="path-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    </svg>
+                    <span class="path-text" id="currentPath">未选择安装路径</span>
+                    <button class="btn-icon" id="selectPathBtn" title="选择路径">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="btn-icon" id="checkUpdateBtn" title="检查更新">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
 
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-puzzle-piece"></i> Mod 下载合集</h3>
-                <a href="https://wwawg.lanzoue.com/b00jev7byd" class="btn" target="_blank"><i
-                        class="fas fa-download"></i> 点击下载</a>
+            <!-- 公告栏 -->
+            <div class="announcement-bar" id="announcementBar">
+                <svg class="announcement-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0" />
+                </svg>
+                <span class="announcement-text">欢迎使用 SPT 自动安装器！官方网站：tkf.pyden.dev</span>
             </div>
-            <p>离线版 Mod 资源合集，包含各类增强游戏体验的模组。</p>
-            <div class="download-meta"><i class="fas fa-key"></i> 提取密码：<strong>6666</strong></div>
-        </div>
 
-        <footer>
-            <p>&copy; 2025 逃离塔科夫离线版社区</p>
-        </footer>
+            <!-- 页面内容容器 -->
+            <div class="page-container">
+                <!-- 主页 -->
+                <div class="page active" id="page-home">
+                    <div class="page-header">
+                        <h1 class="page-title">欢迎使用 SPT 自动安装器</h1>
+                        <p class="page-subtitle">一键安装、管理您的单人塔科夫游戏</p>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-card primary" data-action="install">
+                            <div class="action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                            </div>
+                            <div class="action-content">
+                                <h3>开始安装</h3>
+                                <p>自动下载并安装 SPT 游戏</p>
+                            </div>
+                            <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </div>
+
+                        <div class="action-card success" data-action="launch">
+                            <div class="action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                            </div>
+                            <div class="action-content">
+                                <h3>启动游戏</h3>
+                                <p>启动 SPT 服务端和客户端</p>
+                            </div>
+                            <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7" />
+                                    <rect x="14" y="3" width="7" height="7" />
+                                    <rect x="14" y="14" width="7" height="7" />
+                                    <rect x="3" y="14" width="7" height="7" />
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="modCount">0</span>
+                                <span class="stat-label">已安装 MOD</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                                    <line x1="6" y1="6" x2="6.01" y2="6" />
+                                    <line x1="6" y1="18" x2="6.01" y2="18" />
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="serverVersion">-</span>
+                                <span class="stat-label">服务端版本</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="fikaStatus">单机</span>
+                                <span class="stat-label">联机状态</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="profileCount">0</span>
+                                <span class="stat-label">存档数量</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 安装页面 -->
+                <div class="page" id="page-install">
+                    <div class="page-header">
+                        <h1 class="page-title">安装游戏</h1>
+                        <p class="page-subtitle">选择版本并开始自动安装</p>
+                    </div>
+
+                    <div class="install-section">
+                        <div class="section-card">
+                            <h3 class="section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                </svg>
+                                安装路径
+                            </h3>
+                            <div class="path-selector">
+                                <input type="text" class="path-input" id="installPath" placeholder="请选择安装路径..."
+                                    readonly>
+                                <button class="btn btn-secondary" id="browsePathBtn">浏览</button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <h3 class="section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="4 17 10 11 4 5" />
+                                    <line x1="12" y1="19" x2="20" y2="19" />
+                                </svg>
+                                选择版本
+                            </h3>
+                            <div class="version-list" id="versionList">
+                                <label class="version-item">
+                                    <input type="radio" name="version" value="3.10.5" checked>
+                                    <div class="version-info">
+                                        <span class="version-name">SPT 3.10.5</span>
+                                        <span class="version-tag latest">最新</span>
+                                    </div>
+                                </label>
+                                <label class="version-item">
+                                    <input type="radio" name="version" value="3.10.4">
+                                    <div class="version-info">
+                                        <span class="version-name">SPT 3.10.4</span>
+                                    </div>
+                                </label>
+                                <label class="version-item">
+                                    <input type="radio" name="version" value="3.10.3">
+                                    <div class="version-info">
+                                        <span class="version-name">SPT 3.10.3</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <h3 class="section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                安装进度
+                            </h3>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="installProgress" style="width: 0%"></div>
+                                </div>
+                                <div class="progress-info">
+                                    <span class="progress-text" id="installStatus">等待开始...</span>
+                                    <span class="progress-percent" id="installPercent">0%</span>
+                                </div>
+                            </div>
+                            <div class="install-log" id="installLog">
+                                <div class="log-entry">准备就绪，点击下方按钮开始安装</div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg" id="startInstallBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            开始自动安装
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 启动游戏页面 -->
+                <div class="page" id="page-launch">
+                    <div class="page-header">
+                        <h1 class="page-title">启动游戏</h1>
+                        <p class="page-subtitle">启动服务端和客户端</p>
+                    </div>
+
+                    <div class="launch-section">
+                        <div class="launch-card">
+                            <div class="launch-icon server">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                                    <line x1="6" y1="6" x2="6.01" y2="6" />
+                                    <line x1="6" y1="18" x2="6.01" y2="18" />
+                                </svg>
+                            </div>
+                            <div class="launch-info">
+                                <h3>服务端</h3>
+                                <p>SPT Server</p>
+                                <span class="launch-status" id="serverStatus">
+                                    <span class="status-dot offline"></span>
+                                    未运行
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary" id="launchServerBtn">启动</button>
+                        </div>
+
+                        <div class="launch-card">
+                            <div class="launch-icon client">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                    <line x1="8" y1="21" x2="16" y2="21" />
+                                    <line x1="12" y1="17" x2="12" y2="21" />
+                                </svg>
+                            </div>
+                            <div class="launch-info">
+                                <h3>客户端</h3>
+                                <p>SPT Launcher</p>
+                                <span class="launch-status" id="clientStatus">
+                                    <span class="status-dot offline"></span>
+                                    未运行
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary" id="launchClientBtn">启动</button>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg" id="launchAllBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            一键启动游戏
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MOD 管理页面 -->
+                <div class="page" id="page-mods">
+                    <div class="page-header">
+                        <h1 class="page-title">MOD 管理</h1>
+                        <p class="page-subtitle">下载、安装和管理游戏 MOD</p>
+                    </div>
+
+                    <div class="mod-actions">
+                        <button class="btn btn-primary" id="downloadModBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            下载 MOD
+                        </button>
+                        <button class="btn btn-secondary" id="installModBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14" />
+                                <path d="M5 12h14" />
+                            </svg>
+                            安装 MOD
+                        </button>
+                        <button class="btn btn-danger" id="uninstallAllModsBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            一键卸载全部
+                        </button>
+                    </div>
+
+                    <div class="mod-list-container">
+                        <div class="mod-list-header">
+                            <h3>已安装的 MOD</h3>
+                            <span class="mod-count">共 3 个</span>
+                        </div>
+                        <div class="mod-list" id="modList">
+                            <div class="mod-item">
+                                <div class="mod-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <line x1="3" y1="9" x2="21" y2="9" />
+                                        <line x1="9" y1="21" x2="9" y2="9" />
+                                    </svg>
+                                </div>
+                                <div class="mod-info">
+                                    <span class="mod-name">SAIN AI</span>
+                                    <span class="mod-version">v3.0.0</span>
+                                </div>
+                                <button class="btn-icon btn-danger-icon" title="卸载">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mod-item">
+                                <div class="mod-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <line x1="3" y1="9" x2="21" y2="9" />
+                                        <line x1="9" y1="21" x2="9" y2="9" />
+                                    </svg>
+                                </div>
+                                <div class="mod-info">
+                                    <span class="mod-name">Looting Bots</span>
+                                    <span class="mod-version">v1.3.0</span>
+                                </div>
+                                <button class="btn-icon btn-danger-icon" title="卸载">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mod-item">
+                                <div class="mod-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <line x1="3" y1="9" x2="21" y2="9" />
+                                        <line x1="9" y1="21" x2="9" y2="9" />
+                                    </svg>
+                                </div>
+                                <div class="mod-info">
+                                    <span class="mod-name">Realism Mod</span>
+                                    <span class="mod-version">v1.5.2</span>
+                                </div>
+                                <button class="btn-icon btn-danger-icon" title="卸载">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fika 联机页面 -->
+                <div class="page" id="page-fika">
+                    <div class="page-header">
+                        <h1 class="page-title">Fika 联机</h1>
+                        <p class="page-subtitle">与好友一起游玩 SPT</p>
+                    </div>
+
+                    <div class="fika-status-card">
+                        <div class="fika-status-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                        </div>
+                        <div class="fika-status-info">
+                            <span class="fika-status-label">当前状态</span>
+                            <span class="fika-status-value" id="fikaCurrentStatus">单机模式</span>
+                        </div>
+                    </div>
+
+                    <div class="fika-options">
+                        <div class="fika-option-card" data-action="host">
+                            <div class="fika-option-icon host">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                                    <line x1="6" y1="6" x2="6.01" y2="6" />
+                                    <line x1="6" y1="18" x2="6.01" y2="18" />
+                                </svg>
+                            </div>
+                            <div class="fika-option-content">
+                                <h3>我是房主</h3>
+                                <p>创建服务器，让好友加入</p>
+                            </div>
+                            <svg class="fika-option-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </div>
+
+                        <div class="fika-option-card" data-action="join">
+                            <div class="fika-option-icon join">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                                    <polyline points="10 17 15 12 10 7" />
+                                    <line x1="15" y1="12" x2="3" y2="12" />
+                                </svg>
+                            </div>
+                            <div class="fika-option-content">
+                                <h3>我要加入</h3>
+                                <p>连接到好友的服务器</p>
+                            </div>
+                            <svg class="fika-option-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </div>
+
+                        <div class="fika-option-card" data-action="solo">
+                            <div class="fika-option-icon solo">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            </div>
+                            <div class="fika-option-content">
+                                <h3>恢复单机</h3>
+                                <p>切换回单机游戏模式</p>
+                            </div>
+                            <svg class="fika-option-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 存档管理页面 -->
+                <div class="page" id="page-profiles">
+                    <div class="page-header">
+                        <h1 class="page-title">存档管理</h1>
+                        <p class="page-subtitle">导入和导出游戏存档</p>
+                    </div>
+
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" id="exportProfileBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            导出存档
+                        </button>
+                        <button class="btn btn-secondary" id="importProfileBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            导入存档
+                        </button>
+                    </div>
+
+                    <div class="profile-list-container">
+                        <div class="profile-list-header">
+                            <h3>存档列表</h3>
+                        </div>
+                        <div class="profile-list" id="profileList">
+                            <div class="profile-item">
+                                <div class="profile-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </div>
+                                <div class="profile-info">
+                                    <span class="profile-name">主存档</span>
+                                    <span class="profile-date">2024-01-15 创建</span>
+                                </div>
+                                <div class="profile-actions-inline">
+                                    <button class="btn-icon" title="导出">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="empty-state" style="display: none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                <p>暂无存档</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 服务端版本页面 -->
+                <div class="page" id="page-server">
+                    <div class="page-header">
+                        <h1 class="page-title">服务端版本管理</h1>
+                        <p class="page-subtitle">下载和切换服务端版本</p>
+                    </div>
+
+                    <div class="server-actions">
+                        <button class="btn btn-primary" id="downloadServerBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            下载服务端版本
+                        </button>
+                        <button class="btn btn-secondary" id="switchServerBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 3 21 3 21 8" />
+                                <line x1="4" y1="20" x2="21" y2="3" />
+                                <polyline points="21 16 21 21 16 21" />
+                                <line x1="15" y1="15" x2="21" y2="21" />
+                                <line x1="4" y1="4" x2="9" y2="9" />
+                            </svg>
+                            切换服务端版本
+                        </button>
+                    </div>
+
+                    <div class="server-list-container">
+                        <div class="server-list-header">
+                            <h3>已下载的版本</h3>
+                        </div>
+                        <div class="server-list" id="serverList">
+                            <div class="server-item active">
+                                <div class="server-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                                        <line x1="6" y1="6" x2="6.01" y2="6" />
+                                        <line x1="6" y1="18" x2="6.01" y2="18" />
+                                    </svg>
+                                </div>
+                                <div class="server-info">
+                                    <span class="server-name">SPT 3.10.5</span>
+                                    <span class="server-status">当前使用</span>
+                                </div>
+                                <span class="server-badge active">使用中</span>
+                            </div>
+                            <div class="server-item">
+                                <div class="server-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                                        <line x1="6" y1="6" x2="6.01" y2="6" />
+                                        <line x1="6" y1="18" x2="6.01" y2="18" />
+                                    </svg>
+                                </div>
+                                <div class="server-info">
+                                    <span class="server-name">SPT 3.10.4</span>
+                                    <span class="server-status">可切换</span>
+                                </div>
+                                <button class="btn btn-sm btn-secondary">切换</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 设置页面 -->
+                <div class="page" id="page-settings">
+                    <div class="page-header">
+                        <h1 class="page-title">设置</h1>
+                        <p class="page-subtitle">软件配置和系统工具</p>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-card">
+                            <h3 class="settings-title">系统工具</h3>
+                            <div class="settings-item">
+                                <div class="settings-item-info">
+                                    <span class="settings-item-name">安装 .NET 环境</span>
+                                    <span class="settings-item-desc">安装游戏运行所需的 .NET 运行时</span>
+                                </div>
+                                <button class="btn btn-secondary" id="installDotnetBtn">安装</button>
+                            </div>
+                            <div class="settings-item">
+                                <div class="settings-item-info">
+                                    <span class="settings-item-name">检查软件更新</span>
+                                    <span class="settings-item-desc">检查并更新到最新版本</span>
+                                </div>
+                                <button class="btn btn-secondary" id="checkUpdateBtnSettings">检查</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card danger">
+                            <h3 class="settings-title">危险操作</h3>
+                            <div class="settings-item">
+                                <div class="settings-item-info">
+                                    <span class="settings-item-name">卸载游戏</span>
+                                    <span class="settings-item-desc">完全删除已安装的 SPT 游戏</span>
+                                </div>
+                                <button class="btn btn-danger" id="uninstallGameBtn">卸载</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3 class="settings-title">关于</h3>
+                            <div class="about-info">
+                                <p><strong>SPT 自动安装器</strong></p>
+                                <p>版本：v1.0.0</p>
+                                <p>官方网站：<a href="#" class="link">tkf.pyden.dev</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <!-- 模态框 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">提示</h3>
+                <button class="modal-close" id="modalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 动态内容 -->
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn btn-secondary" id="modalCancel">取消</button>
+                <button class="btn btn-primary" id="modalConfirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
 </body>
 
 </html>
